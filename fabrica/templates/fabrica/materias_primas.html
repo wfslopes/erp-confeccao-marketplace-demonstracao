@@ -47,7 +47,7 @@
         letter-spacing: 0.3px;
     }
     .badge-tecido {
-        background: #FAF0E6;
+        background: #EDF5F0;
         color: var(--wine-800);
         border: 1px solid #E8D3C5;
     }
@@ -151,7 +151,7 @@
     <!-- 1. KPIs das Matérias-Primas -->
     <div class="mp-kpi-grid">
         <div class="mp-kpi-card">
-            <div class="mp-kpi-icon" style="background: #FAF0E6; color: var(--wine-800);">
+            <div class="mp-kpi-icon" style="background: #EDF5F0; color: var(--wine-800);">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
                 </svg>
@@ -164,7 +164,7 @@
         </div>
 
         <div class="mp-kpi-card">
-            <div class="mp-kpi-icon" style="background: #FAF5F0; color: var(--wine-700);">
+            <div class="mp-kpi-icon" style="background: #F1F5F2; color: var(--wine-700);">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M20.59 13.41-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
                 </svg>
@@ -325,7 +325,7 @@
                         <!-- Produtos Impactados -->
                         <td style="text-align: center;">
                             {% if mp.produtos_count > 0 %}
-                            <button onclick="abrirModalProdutos('{{ mp.nome|escapejs }}', [{% for prod in mp.produtos_afetados %}{id: {{ prod.id }}, sku: '{{ prod.sku|escapejs }}', nome: '{{ prod.nome|escapejs }}', custo: '{{ prod.custo_materia_prima|floatformat:4 }}'}{% if not forloop.last %},{% endif %}{% endfor %}])" class="badge-maquina" style="cursor: pointer; background: #FAF0E6; color: var(--wine-900); border: 1px solid var(--border-light); font-weight: 700; font-size: 12px; padding: 4px 10px; border-radius: 12px;" title="Ver produtos que utilizam este insumo">
+                            <button onclick="abrirModalProdutos('{{ mp.nome|escapejs }}', [{% for prod in mp.produtos_afetados %}{id: {{ prod.id }}, sku: '{{ prod.sku|escapejs }}', nome: '{{ prod.nome|escapejs }}', custo: '{{ prod.custo_materia_prima|floatformat:4 }}'}{% if not forloop.last %},{% endif %}{% endfor %}])" class="badge-maquina" style="cursor: pointer; background: #EDF5F0; color: var(--wine-900); border: 1px solid var(--border-light); font-weight: 700; font-size: 12px; padding: 4px 10px; border-radius: 12px;" title="Ver produtos que utilizam este insumo">
                                 🏷️ {{ mp.produtos_count }} produto(s)
                             </button>
                             {% else %}

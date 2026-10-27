@@ -23,11 +23,11 @@
             <div class="form-group" style="margin-bottom: 0;">
                 <label>Tipo de Prestador / Colaborador *</label>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                    <label style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: {% if faccionista.tipo == 'faccionista' %}#FAF5F0{% else %}var(--bg-subtle){% endif %}; border: {% if faccionista.tipo == 'faccionista' %}2px solid var(--wine-600){% else %}1px solid var(--border-light){% endif %}; border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; font-weight: 600;">
+                    <label style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: {% if faccionista.tipo == 'faccionista' %}#F1F5F2{% else %}var(--bg-subtle){% endif %}; border: {% if faccionista.tipo == 'faccionista' %}2px solid var(--wine-600){% else %}1px solid var(--border-light){% endif %}; border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; font-weight: 600;">
                         <input type="radio" name="tipo" value="faccionista" {% if faccionista.tipo == 'faccionista' %}checked{% endif %} style="accent-color: var(--wine-600);">
                         <span>Faccionista Externa</span>
                     </label>
-                    <label style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: {% if faccionista.tipo == 'costureira_interna' %}#FAF5F0{% else %}var(--bg-subtle){% endif %}; border: {% if faccionista.tipo == 'costureira_interna' %}2px solid var(--wine-600){% else %}1px solid var(--border-light){% endif %}; border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; font-weight: 600;">
+                    <label style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: {% if faccionista.tipo == 'costureira_interna' %}#F1F5F2{% else %}var(--bg-subtle){% endif %}; border: {% if faccionista.tipo == 'costureira_interna' %}2px solid var(--wine-600){% else %}1px solid var(--border-light){% endif %}; border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; font-weight: 600;">
                         <input type="radio" name="tipo" value="costureira_interna" {% if faccionista.tipo == 'costureira_interna' %}checked{% endif %} style="accent-color: var(--wine-600);">
                         <span>Costureira da Fábrica</span>
                     </label>

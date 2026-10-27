@@ -83,7 +83,7 @@
         font-size: 12px;
     }
     .extrato-table th {
-        background-color: #FAF5F0;
+        background-color: #F1F5F2;
         color: var(--wine-700);
         padding: 9px 8px;
         font-weight: 700;
@@ -104,7 +104,7 @@
         transition: background-color 0.12s ease;
     }
     .extrato-table tbody tr:hover {
-        background-color: #FAF6F2;
+        background-color: #F1F5F2;
     }
     .extrato-table tbody tr:last-child td {
         border-bottom: none;
@@ -480,7 +480,7 @@
 
         {% if request.user.is_superuser %}
         <!-- Gaveta para Cadastro de Venda -->
-        <div id="form-nova-venda" style="display: none; background: #FAF6F2; padding: 22px 24px; border-bottom: 2px solid var(--wine-200);">
+        <div id="form-nova-venda" style="display: none; background: #F1F5F2; padding: 22px 24px; border-bottom: 2px solid var(--wine-200);">
             <h4 style="color: var(--wine-700); font-size: 13px; text-transform: uppercase; font-weight: 700; margin-bottom: 14px; letter-spacing: 0.5px;">
                 Registrar Venda do Marketplace
             </h4>
@@ -979,7 +979,7 @@
 
                 <div class="form-group" style="margin-bottom: 18px;">
                     <label style="font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; display: block; margin-bottom: 6px; color: var(--text-secondary, #574B4E);">Arquivo da Planilha (.xlsx, .xls, .xlsm ou .csv) *</label>
-                    <div id="drop_area_planilha" style="border: 2px dashed var(--wine-300, #C2969B); border-radius: 10px; padding: 22px 18px; text-align: center; background: #FAF6F2; cursor: pointer; transition: all 0.2s ease;" onclick="document.getElementById('input_arquivo_planilha').click();">
+                    <div id="drop_area_planilha" style="border: 2px dashed var(--wine-300, #C2969B); border-radius: 10px; padding: 22px 18px; text-align: center; background: #F1F5F2; cursor: pointer; transition: all 0.2s ease;" onclick="document.getElementById('input_arquivo_planilha').click();">
                         <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color: var(--wine-700, #4A765D); margin-bottom: 8px;">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                             <polyline points="17 8 12 3 7 8"/>
@@ -1057,7 +1057,7 @@
                     <input type="file" name="arquivo_ads" id="input_arquivo_ads" accept=".csv,.xlsx,.xls,.xlsm" style="display: none;" required onchange="atualizarNomeArquivoAds(this)">
                 </div>
 
-                <div style="background: #FAF6F2; border-left: 4px solid var(--wine-600); padding: 12px 14px; border-radius: 6px; font-size: 12px; color: var(--text-secondary); margin-bottom: 22px; line-height: 1.5;">
+                <div style="background: #F1F5F2; border-left: 4px solid var(--wine-600); padding: 12px 14px; border-radius: 6px; font-size: 12px; color: var(--text-secondary); margin-bottom: 22px; line-height: 1.5;">
                     <strong>&#9432; Inteligência de Rateio:</strong> O sistema vincula as despesas aos anúncios, calcula o CAC unitário de cada modelo e identifica pedidos cancelados para registrar o custo de Ads perdido.
                 </div>
 

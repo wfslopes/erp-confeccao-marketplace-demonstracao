@@ -37,7 +37,7 @@
         flex-shrink: 0;
     }
     .kpi-icon-wine {
-        background: #FAF0E6;
+        background: #EDF5F0;
         color: var(--wine-700);
     }
     .kpi-icon-green {
@@ -340,7 +340,7 @@
                             <div style="font-weight: 700; color: var(--text-primary); font-size: 13.5px;">{{ ped.cliente.nome }}</div>
                             {% if ped.cliente.tag %}
                                 <div style="margin-top: 3px;">
-                                    <span class="tag-pill" style="background: #FAF5F0; color: var(--wine-700); font-weight: 700; font-size: 11px; padding: 2px 7px; border: 1px solid var(--wine-200);">
+                                    <span class="tag-pill" style="background: #F1F5F2; color: var(--wine-700); font-weight: 700; font-size: 11px; padding: 2px 7px; border: 1px solid var(--wine-200);">
                                         🏷️ TAG: {{ ped.cliente.tag }}
                                     </span>
                                 </div>
@@ -395,7 +395,7 @@
                             </a>
 
                             <!-- Botão Imprimir Lista de Compras -->
-                            <a href="{% url 'imprimir_lista_compras' ped.id %}" target="_blank" class="btn-acao" style="background: #FAF0E6; color: var(--wine-800); border: 1px solid #E6D0BA;" title="Imprimir Lista de Compras">
+                            <a href="{% url 'imprimir_lista_compras' ped.id %}" target="_blank" class="btn-acao" style="background: #EDF5F0; color: var(--wine-800); border: 1px solid #E6D0BA;" title="Imprimir Lista de Compras">
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <polyline points="6 9 6 2 18 2 18 9"/>
                                     <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>

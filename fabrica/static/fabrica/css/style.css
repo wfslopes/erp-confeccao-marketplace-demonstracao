@@ -96,17 +96,18 @@ body {
 }
 
 /* ==========================================================================
-   SIDEBAR MODERNA (MENU LATERAL)
+   SIDEBAR MODERNA (MENU LATERAL EM VERDE PASTEL & OFF-WHITE)
    ========================================================================== */
 
 .sidebar {
     width: 270px;
-    background: linear-gradient(180deg, #2D4839 0%, #1D3025 100%);
-    color: var(--text-inverse);
+    background: linear-gradient(180deg, #F4F8F5 0%, #E8F2EC 100%);
+    color: #1F3327;
     display: flex;
     flex-direction: column;
     padding: 24px 16px;
-    box-shadow: 4px 0 24px rgba(29, 48, 37, 0.20);
+    border-right: 1px solid #D5E4DB;
+    box-shadow: 2px 0 16px rgba(35, 60, 45, 0.05);
     z-index: 100;
     user-select: none;
     flex-shrink: 0;
@@ -117,14 +118,14 @@ body {
     flex-direction: column;
     align-items: center;
     padding-bottom: 22px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+    border-bottom: 1px solid #D9E7DF;
     margin-bottom: 20px;
 }
 
 .sidebar .logo-img {
     max-width: 170px;
     height: auto;
-    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.25));
+    filter: drop-shadow(0 2px 6px rgba(45, 75, 58, 0.10));
     transition: var(--transition);
 }
 
@@ -138,18 +139,19 @@ body {
     letter-spacing: 1.5px;
     text-transform: uppercase;
     font-weight: 700;
-    color: rgba(252, 247, 242, 0.65);
-    background: rgba(255, 255, 255, 0.08);
+    color: #2D5B41;
+    background: #DCEDE2;
+    border: 1px solid #C4DFC0;
     padding: 3px 10px;
     border-radius: var(--radius-full);
 }
 
 .sidebar-nav-label {
-    font-size: 10px;
+    font-size: 10.5px;
     text-transform: uppercase;
     letter-spacing: 1.2px;
     font-weight: 700;
-    color: rgba(252, 247, 242, 0.50);
+    color: #557E66;
     padding: 10px 14px 6px;
     margin-top: 4px;
 }
@@ -167,17 +169,17 @@ body {
     width: 4px;
 }
 .sidebar-menu::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.15);
+    background: #C4D8CD;
     border-radius: 4px;
 }
 
 .sidebar a {
-    color: #F1E5E7;
+    color: #2D4839;
     text-decoration: none;
     padding: 11px 14px;
     border-radius: var(--radius-md);
     font-size: 13.5px;
-    font-weight: 500;
+    font-weight: 600;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -193,28 +195,28 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: rgba(252, 247, 242, 0.7);
+    color: #557E66;
     transition: var(--transition);
     flex-shrink: 0;
 }
 
 .sidebar a:hover {
-    background-color: rgba(255, 255, 255, 0.09);
-    color: #FFFFFF;
+    background-color: #DEEBE2;
+    color: #162B20;
     transform: translateX(3px);
 }
 
 .sidebar a:hover .nav-icon {
-    color: #FFFFFF;
+    color: #264B35;
 }
 
 /* Estado Ativo (Página Aberta) */
 .sidebar a.active {
-    background: rgba(255, 255, 255, 0.16);
-    color: #FFFFFF;
+    background: linear-gradient(135deg, #4A765D 0%, #395A48 100%);
+    color: #FFFFFF !important;
     font-weight: 700;
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    border: 1px solid #395A48;
+    box-shadow: 0 4px 12px rgba(57, 90, 72, 0.22);
 }
 
 .sidebar a.active::before {
@@ -225,19 +227,19 @@ body {
     transform: translateY(-50%);
     width: 5px;
     height: 22px;
-    background-color: #EDE4D6;
+    background-color: #8EB39D;
     border-radius: 0 4px 4px 0;
 }
 
 .sidebar a.active .nav-icon {
-    color: #FFFFFF;
+    color: #FFFFFF !important;
 }
 
 /* Rodapé do Menu Lateral */
 .sidebar-footer {
     margin-top: auto;
     padding-top: 16px;
-    border-top: 1px solid rgba(255, 255, 255, 0.10);
+    border-top: 1px solid #D9E7DF;
 }
 
 .sidebar-user-card {
@@ -245,23 +247,23 @@ body {
     align-items: center;
     gap: 12px;
     padding: 10px 12px;
-    background: rgba(0, 0, 0, 0.16);
+    background: #E5EFE8;
     border-radius: var(--radius-md);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid #D2E2D8;
 }
 
 .sidebar-user-avatar {
     width: 36px;
     height: 36px;
     border-radius: var(--radius-full);
-    background: linear-gradient(135deg, #EDE4D6 0%, #D5C9BA 100%);
-    color: var(--wine-800);
+    background: linear-gradient(135deg, #4A765D 0%, #395A48 100%);
+    color: #FFFFFF;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 700;
     font-size: 14px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 6px rgba(45, 75, 58, 0.2);
     flex-shrink: 0;
 }
 
@@ -272,8 +274,8 @@ body {
 
 .sidebar-user-name {
     font-size: 13px;
-    font-weight: 600;
-    color: #FFFFFF;
+    font-weight: 700;
+    color: #1C2E24;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -281,7 +283,7 @@ body {
 
 .sidebar-user-role {
     font-size: 11px;
-    color: rgba(252, 247, 242, 0.65);
+    color: #557E66;
 }
 
 /* ==========================================================================
@@ -304,11 +306,11 @@ body {
     background: var(--bg-app);
 }
 .main-content::-webkit-scrollbar-thumb {
-    background: #DECFC3;
+    background: #C8DCD0;
     border-radius: 4px;
 }
 .main-content::-webkit-scrollbar-thumb:hover {
-    background: #CBB9AA;
+    background: #ACCEB8;
 }
 
 /* Header Superior Moderno */

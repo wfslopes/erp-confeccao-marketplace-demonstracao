@@ -35,7 +35,7 @@
 
         .btn-imprimir {
             background: linear-gradient(135deg, #4A765D 0%, #2D4839 100%);
-            color: #FCF7F2;
+            color: #F8FAF8;
             border: none;
             padding: 10px 22px;
             border-radius: 8px;
@@ -105,10 +105,10 @@
         }
 
         .info-box {
-            background: #FAF6F2;
+            background: #F1F5F2;
             padding: 16px;
             border-radius: 10px;
-            border: 1px solid #EDE4D6;
+            border: 1px solid #E5EFE8;
             font-size: 13px;
             line-height: 1.6;
         }
@@ -127,7 +127,7 @@
         }
 
         .tabela-grade th, .tabela-grade td {
-            border: 1px solid #EDE4D6;
+            border: 1px solid #E5EFE8;
             padding: 10px 14px;
             text-align: left;
         }
@@ -142,7 +142,7 @@
         }
 
         .tabela-grade tbody tr:nth-child(even) {
-            background-color: #FAF6F2;
+            background-color: #F1F5F2;
         }
 
         .conferencia-box {
@@ -259,7 +259,7 @@
                 {% for g in sub_lote.grades.all %}
                 <tr>
                     <td style="font-weight: 600;">{{ g.cor }}</td>
-                    <td><span style="display: inline-block; padding: 2px 8px; background: #FAF5F0; border: 1px solid #E5DDD1; border-radius: 4px; font-weight: 700; font-size: 12px;">{{ g.tamanho }}</span></td>
+                    <td><span style="display: inline-block; padding: 2px 8px; background: #F1F5F2; border: 1px solid #E5DDD1; border-radius: 4px; font-weight: 700; font-size: 12px;">{{ g.tamanho }}</span></td>
                     <td style="text-align: right; font-weight: 700;">{{ g.quantidade }} pçs</td>
                 </tr>
                 {% empty %}
@@ -269,7 +269,7 @@
                 {% endfor %}
             </tbody>
             <tfoot>
-                <tr style="background-color: #FAF5F0; font-weight: 700;">
+                <tr style="background-color: #F1F5F2; font-weight: 700;">
                     <td colspan="2" style="text-align: right; text-transform: uppercase; font-size: 12px;">Total de Peças Entregues:</td>
                     <td style="text-align: right; color: #4A765D; font-size: 15px;">{{ sub_lote.quantidade_enviada }} pçs</td>
                 </tr>

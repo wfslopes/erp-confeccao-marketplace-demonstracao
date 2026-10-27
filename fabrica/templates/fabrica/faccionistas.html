@@ -52,7 +52,7 @@
                 <div class="form-group" style="margin-bottom: 0;">
                     <label>Tipo de Prestador / Colaborador *</label>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                        <label id="lbl-tipo-faccionista" style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #FAF5F0; border: 2px solid var(--wine-600); border-radius: var(--radius-sm); cursor: pointer; font-size: 12.5px; font-weight: 600; color: var(--wine-800);">
+                        <label id="lbl-tipo-faccionista" style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #F1F5F2; border: 2px solid var(--wine-600); border-radius: var(--radius-sm); cursor: pointer; font-size: 12.5px; font-weight: 600; color: var(--wine-800);">
                             <input type="radio" name="tipo" value="faccionista" checked onchange="aoMudarTipoCadastro(this.value)" style="accent-color: var(--wine-600);">
                             <span>Faccionista Externa</span>
                         </label>
@@ -198,7 +198,7 @@
 
         if (tipo === 'costureira_interna') {
             lblCost.style.border = '2px solid var(--wine-600)';
-            lblCost.style.background = '#FAF5F0';
+            lblCost.style.background = '#F1F5F2';
             lblCost.style.color = 'var(--wine-800)';
             lblFac.style.border = '1px solid var(--border-light)';
             lblFac.style.background = 'var(--bg-subtle)';
@@ -209,7 +209,7 @@
             btnSubmit.textContent = 'Cadastrar Costureira da Fábrica';
         } else {
             lblFac.style.border = '2px solid var(--wine-600)';
-            lblFac.style.background = '#FAF5F0';
+            lblFac.style.background = '#F1F5F2';
             lblFac.style.color = 'var(--wine-800)';
             lblCost.style.border = '1px solid var(--border-light)';
             lblCost.style.background = 'var(--bg-subtle)';
