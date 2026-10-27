@@ -58,7 +58,7 @@
         font-weight: 600;
         border-radius: var(--radius-md, 8px);
         text-decoration: none;
-        color: var(--text-secondary);
+        color: #111827; font-weight: 700;
         background: var(--bg-surface);
         border: 1px solid var(--border-light);
         transition: all 0.2s;
@@ -111,7 +111,7 @@
     }
     .view-btn:not(.active) {
         background: transparent;
-        color: var(--text-secondary);
+        color: #111827; font-weight: 700;
     }
     .view-btn:not(.active):hover {
         background: var(--bg-subtle);
@@ -133,7 +133,7 @@
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.4px;
-        color: var(--text-secondary);
+        color: #111827; font-weight: 700;
         border-bottom: 2px solid var(--border-light);
         white-space: nowrap;
     }
@@ -260,7 +260,7 @@
             <div style="font-size: 26px; font-weight: 800; color: {% if lucro_mkt_total >= 0 %}#1E6E3C{% else %}#A32832{% endif %}; margin: 8px 0 4px 0;">
                 R$ {{ lucro_mkt_total|floatformat:2 }}
             </div>
-            <div style="font-size: 12px; color: var(--text-secondary);">
+            <div style="font-size: 12px; color: #111827; font-weight: 700;">
                 Margem Líquida Varejo: <strong>{{ margem_mkt_total|floatformat:1 }}%</strong> <br>
                 <span style="font-size: 11px; color: var(--text-muted);">GMV Faturado: R$ {{ faturamento_mkt_total|floatformat:2 }}</span>
             </div>
@@ -275,7 +275,7 @@
             <div style="font-size: 26px; font-weight: 800; color: #1E6E3C; margin: 8px 0 4px 0;">
                 R$ {{ lucro_fabrica_total|floatformat:2 }}
             </div>
-            <div style="font-size: 12px; color: var(--text-secondary);">
+            <div style="font-size: 12px; color: #111827; font-weight: 700;">
                 Margem Industrial: <strong>{{ margem_fabrica_total|floatformat:1 }}%</strong> <br>
                 <span style="font-size: 11px; color: var(--text-muted);">Faturamento Fábrica: R$ {{ faturamento_fabrica_total|floatformat:2 }}</span>
             </div>
@@ -305,7 +305,7 @@
             <div style="font-size: 26px; font-weight: 800; color: var(--wine-700); margin: 8px 0 4px 0;">
                 {{ pecas_produzidas_total }} <span style="font-size: 16px; font-weight: 600; color: var(--text-muted);">peças</span>
             </div>
-            <div style="font-size: 12px; color: var(--text-secondary);">
+            <div style="font-size: 12px; color: #111827; font-weight: 700;">
                 Distribuídas em <strong>{{ pedidos_total }} pedidos</strong> de clientes <br>
                 <span style="font-size: 11px; color: var(--text-muted);">Custo Fabril Total: R$ {{ custo_fabrica_total|floatformat:2 }}</span>
             </div>
@@ -434,7 +434,7 @@
                                 </span>
                             </td>
                             <td style="min-width: 280px; max-width: 400px;">
-                                <div style="font-size: 12px; line-height: 1.45; color: var(--text-secondary); background: #FAF7F4; border-left: 3px solid {% if item.status_badge == 'badge-success' %}#1E6E3C{% elif item.status_badge == 'badge-warning' %}#D9822B{% elif item.status_badge == 'badge-danger' %}#A32832{% else %}#6C757D{% endif %}; padding: 7px 10px; border-radius: 6px; word-break: normal; overflow-wrap: break-word; white-space: normal;">
+                                <div style="font-size: 12px; line-height: 1.45; color: #111827; font-weight: 700; background: #FAF7F4; border-left: 3px solid {% if item.status_badge == 'badge-success' %}#1E6E3C{% elif item.status_badge == 'badge-warning' %}#D9822B{% elif item.status_badge == 'badge-danger' %}#A32832{% else %}#6C757D{% endif %}; padding: 7px 10px; border-radius: 6px; word-break: normal; overflow-wrap: break-word; white-space: normal;">
                                     <strong style="color: var(--text-primary); font-size: 11.5px; display: block; margin-bottom: 2px;">{{ item.status_label }}</strong>
                                     {{ item.diagnostico }}
                                 </div>
@@ -549,7 +549,7 @@
                             </td>
 
                             <td style="text-align: right;">
-                                <span style="font-size: 12.5px; color: var(--text-secondary);">R$ {{ item.custo_fabrica_total|floatformat:2 }}</span>
+                                <span style="font-size: 12.5px; color: #111827; font-weight: 700;">R$ {{ item.custo_fabrica_total|floatformat:2 }}</span>
                             </td>
 
                             <td style="text-align: right;">
@@ -622,7 +622,7 @@
             <input type="hidden" name="next_url" value="{{ request.get_full_path }}">
 
             <div class="form-group" style="margin-bottom: 16px;">
-                <label style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; display: block; margin-bottom: 6px; color: var(--text-secondary);">
+                <label style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; display: block; margin-bottom: 6px; color: #111827; font-weight: 700;">
                     Custo Fabril de Produção (R$) *
                 </label>
                 <div style="display: flex; align-items: center; gap: 6px;">
@@ -635,7 +635,7 @@
             </div>
 
             <div class="form-group" style="margin-bottom: 18px;">
-                <label style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; display: block; margin-bottom: 6px; color: var(--text-secondary);">
+                <label style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; display: block; margin-bottom: 6px; color: #111827; font-weight: 700;">
                     Preço de Transferência da Fábrica (R$) *
                 </label>
                 <div style="display: flex; align-items: center; gap: 6px;">
@@ -663,7 +663,7 @@
             </div>
 
             <div style="margin-bottom: 22px;">
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12.5px; color: var(--text-secondary);">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12.5px; color: #111827; font-weight: 700;">
                     <input type="checkbox" name="recalcular_vendas" value="1" checked style="width: 16px; height: 16px; accent-color: var(--wine-700);">
                     <span>Recalcular histórico de vendas anteriores deste produto com os novos custos</span>
                 </label>
