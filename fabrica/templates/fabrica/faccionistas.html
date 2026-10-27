@@ -1,0 +1,238 @@
+{% extends 'fabrica/base.html' %}
+{% load static %}
+
+{% block title %}Faccionistas & Costureiras - Disfarce{% endblock %}
+{% block breadcrumb %}Faccionistas & Costureiras{% endblock %}
+{% block page_title %}Gestão de Faccionistas & Costureiras da Fábrica{% endblock %}
+
+{% block extra_head %}
+<style>
+    .btn-filtro-tipo {
+        padding: 5px 14px;
+        border-radius: var(--radius-full);
+        border: 1px solid var(--border-medium);
+        background: var(--bg-surface);
+        color: var(--text-secondary);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+    .btn-filtro-tipo.active,
+    .btn-filtro-tipo:hover {
+        background: var(--wine-600);
+        color: #fff;
+        border-color: var(--wine-600);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    
+    <div style="{% if request.user.is_superuser %}display: grid; grid-template-columns: 1fr 2fr; gap: 24px;{% endif %}">
+        {% if request.user.is_superuser %}
+        <!-- Formulário de Cadastro de Faccionista / Costureira -->
+        <div class="card" style="margin-bottom: 0;">
+            <div class="card-header">
+                <h3>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <line x1="19" x2="19" y1="8" y2="14"/>
+                        <line x1="22" x2="16" y1="11" y2="11"/>
+                    </svg>
+                    <span>Novo Cadastro</span>
+                </h3>
+            </div>
+            
+            <form method="post" style="display: flex; flex-direction: column; gap: 12px;">
+                {% csrf_token %}
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Tipo de Prestador / Colaborador *</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <label id="lbl-tipo-faccionista" style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #FAF5F0; border: 2px solid var(--wine-600); border-radius: var(--radius-sm); cursor: pointer; font-size: 12.5px; font-weight: 600; color: var(--wine-800);">
+                            <input type="radio" name="tipo" value="faccionista" checked onchange="aoMudarTipoCadastro(this.value)" style="accent-color: var(--wine-600);">
+                            <span>Faccionista Externa</span>
+                        </label>
+                        <label id="lbl-tipo-costureira" style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: var(--radius-sm); cursor: pointer; font-size: 12.5px; font-weight: 600; color: var(--text-secondary);">
+                            <input type="radio" name="tipo" value="costureira_interna" onchange="aoMudarTipoCadastro(this.value)" style="accent-color: var(--wine-600);">
+                            <span>Costureira da Fábrica</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label id="label-nome-prestador">Nome / Razão Social *</label>
+                    <input type="text" name="nome" id="input-nome-prestador" placeholder="Ex: Oficina da Maria" class="form-control" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Telefone / WhatsApp</label>
+                    <input type="text" name="telefone" placeholder="(00) 00000-0000" class="form-control">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 10px;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>CEP</label>
+                        <input type="text" name="cep" placeholder="00000-000" class="form-control">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Endereço Completo</label>
+                        <input type="text" name="endereco" placeholder="Rua, número, bairro" class="form-control">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Ponto de Referência</label>
+                    <input type="text" name="ponto_referencia" placeholder="Próximo ao comércio..." class="form-control">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Máquinas Habilitadas / Disponíveis</label>
+                    <div style="max-height: 130px; overflow-y: auto; background: var(--bg-subtle); padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-light); display: flex; flex-direction: column; gap: 6px;">
+                        {% for maq in maquinas_disponiveis %}
+                            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; cursor: pointer;">
+                                <input type="checkbox" name="maquinas" value="{{ maq.id }}" style="accent-color: var(--wine-600); width: 16px; height: 16px;">
+                                {% if maq.codigo %}
+                                <strong style="font-family: monospace; font-size: 11px; background: #FFF; padding: 1px 5px; border-radius: 3px; border: 1px solid var(--border-light); color: var(--wine-800);">{{ maq.codigo }}</strong>
+                                {% endif %}
+                                <span>{{ maq.nome }}</span>
+                            </label>
+                        {% empty %}
+                            <small style="color: var(--text-muted);">Nenhuma máquina cadastrada no sistema.</small>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <button type="submit" id="btn-submit-cadastro" class="btn-primary" style="margin-top: 6px; width: 100%;">Cadastrar Faccionista</button>
+            </form>
+        </div>
+        {% endif %}
+
+        <!-- Tabela de Faccionistas & Costureiras Cadastradas -->
+        <div class="table-container" style="margin-bottom: 0;">
+            <div class="table-header-box" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <h3 style="margin-bottom: 2px;">Faccionistas & Costureiras</h3>
+                    <span class="table-count-badge">{{ faccionistas|length }} ativas</span>
+                </div>
+                <div style="display: flex; gap: 6px;">
+                    <button type="button" class="btn-filtro-tipo active" onclick="filtrarTipo('todos', this)">Todas ({{ faccionistas|length }})</button>
+                    <button type="button" class="btn-filtro-tipo" onclick="filtrarTipo('faccionista', this)">Faccionistas ({{ total_faccionistas_externas }})</button>
+                    <button type="button" class="btn-filtro-tipo" onclick="filtrarTipo('costureira_interna', this)">Costureiras Fábrica ({{ total_costureiras_internas }})</button>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="min-width: 170px;">Nome / Prestador</th>
+                            <th style="min-width: 130px;">Tipo</th>
+                            <th style="min-width: 170px;">Contato / Localização</th>
+                            <th>Máquinas</th>
+                            {% if request.user.is_superuser %}
+                            <th style="text-align: right; min-width: 130px;">Ações</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fac in faccionistas %}
+                        <tr class="linha-prestador" data-tipo="{{ fac.tipo }}">
+                            <td>
+                                <strong style="color: var(--wine-800); font-size: 14px;">{{ fac.nome }}</strong>
+                            </td>
+                            <td>
+                                {% if fac.tipo == 'costureira_interna' %}
+                                    <span class="badge badge-info" style="font-size: 10.5px;">Costureira Fábrica</span>
+                                {% else %}
+                                    <span class="badge badge-wine" style="font-size: 10.5px;">Faccionista Externa</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if fac.telefone %}
+                                    <div style="font-weight: 600; color: var(--text-primary); font-size: 12.5px;">{{ fac.telefone }}</div>
+                                {% endif %}
+                                <div style="color: var(--text-muted); font-size: 12px;">{{ fac.endereco|default:"Endereço não informado" }}</div>
+                            </td>
+                            <td>
+                                {% for m in fac.maquinas.all %}
+                                    <span class="tag-pill">{{ m.nome }}</span>
+                                {% empty %}
+                                    <span style="color: var(--text-muted); font-size: 11.5px;">Não informado</span>
+                                {% endfor %}
+                            </td>
+                            {% if request.user.is_superuser %}
+                            <td style="text-align: right; white-space: nowrap;">
+                                <a href="{% url 'editar_faccionista' fac.id %}" class="btn-acao btn-editar">Editar</a>
+                                <a href="{% url 'excluir_faccionista' fac.id %}" class="btn-acao btn-excluir" onclick="return confirm('Deseja excluir {{ fac.nome }}?');">Excluir</a>
+                            </td>
+                            {% endif %}
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="{% if request.user.is_superuser %}5{% else %}4{% endif %}" class="empty-state">
+                                <p>Nenhuma faccionista ou costureira cadastrada no momento.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function aoMudarTipoCadastro(tipo) {
+        const lblFac = document.getElementById('lbl-tipo-faccionista');
+        const lblCost = document.getElementById('lbl-tipo-costureira');
+        const lblNome = document.getElementById('label-nome-prestador');
+        const inputNome = document.getElementById('input-nome-prestador');
+        const btnSubmit = document.getElementById('btn-submit-cadastro');
+
+        if (tipo === 'costureira_interna') {
+            lblCost.style.border = '2px solid var(--wine-600)';
+            lblCost.style.background = '#FAF5F0';
+            lblCost.style.color = 'var(--wine-800)';
+            lblFac.style.border = '1px solid var(--border-light)';
+            lblFac.style.background = 'var(--bg-subtle)';
+            lblFac.style.color = 'var(--text-secondary)';
+
+            lblNome.textContent = 'Nome da Costureira da Fábrica *';
+            inputNome.placeholder = 'Ex: Maria Silva (Costureira Interna)';
+            btnSubmit.textContent = 'Cadastrar Costureira da Fábrica';
+        } else {
+            lblFac.style.border = '2px solid var(--wine-600)';
+            lblFac.style.background = '#FAF5F0';
+            lblFac.style.color = 'var(--wine-800)';
+            lblCost.style.border = '1px solid var(--border-light)';
+            lblCost.style.background = 'var(--bg-subtle)';
+            lblCost.style.color = 'var(--text-secondary)';
+
+            lblNome.textContent = 'Nome / Razão Social *';
+            inputNome.placeholder = 'Ex: Oficina da Maria';
+            btnSubmit.textContent = 'Cadastrar Faccionista';
+        }
+    }
+
+    function filtrarTipo(tipo, btn) {
+        document.querySelectorAll('.btn-filtro-tipo').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const rows = document.querySelectorAll('.linha-prestador');
+        rows.forEach(r => {
+            if (tipo === 'todos' || r.getAttribute('data-tipo') === tipo) {
+                r.style.display = '';
+            } else {
+                r.style.display = 'none';
+            }
+        });
+    }
+</script>
+{% endblock %}

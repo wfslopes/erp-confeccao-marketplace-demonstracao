@@ -1,0 +1,453 @@
+{% extends 'fabrica/base.html' %}
+{% load static %}
+
+{% block title %}Calendário de Produção & Pedidos - Disfarce{% endblock %}
+{% block breadcrumb %}Calendário de Produção{% endblock %}
+{% block page_title %}Calendário Visual de Execução Fabril & Pedidos{% endblock %}
+
+{% block extra_head %}
+<style>
+    .cal-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+    .cal-kpi-card {
+        background: #FFFFFF;
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-md);
+        padding: 16px 20px;
+        box-shadow: var(--shadow-sm);
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+    .cal-kpi-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: var(--radius-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .cal-nav-bar {
+        background: #FFFFFF;
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-md);
+        padding: 16px 22px;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+        box-shadow: var(--shadow-sm);
+    }
+    .cal-nav-arrows {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .btn-nav-cal {
+        background: var(--bg-subtle);
+        border: 1px solid var(--border-light);
+        color: var(--text-primary);
+        padding: 8px 14px;
+        border-radius: var(--radius-sm);
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: var(--transition);
+    }
+    .btn-nav-cal:hover {
+        background: #FFFFFF;
+        border-color: var(--wine-600);
+        color: var(--wine-700);
+    }
+
+    .cal-filtro-btn {
+        padding: 6px 14px;
+        border-radius: var(--radius-full);
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        text-decoration: none;
+        border: 1px solid var(--border-light);
+        background: var(--bg-subtle);
+        color: var(--text-secondary);
+        transition: var(--transition);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .cal-filtro-btn.active {
+        background: var(--wine-700);
+        color: #FFFFFF;
+        border-color: var(--wine-700);
+    }
+
+    /* Grade do Calendário */
+    .calendar-container {
+        background: #FFFFFF;
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 30px;
+    }
+    .cal-header-row {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        background: #FAF5F0;
+        border-bottom: 2px solid var(--wine-200);
+    }
+    .cal-header-cell {
+        padding: 12px 10px;
+        text-align: center;
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--wine-800);
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+    }
+
+    .cal-week-row {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        border-bottom: 1px solid var(--border-light);
+    }
+    .cal-week-row:last-child {
+        border-bottom: none;
+    }
+
+    .cal-day-cell {
+        min-height: 125px;
+        border-right: 1px solid var(--border-light);
+        padding: 8px;
+        background: #FFFFFF;
+        transition: background 0.15s ease;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .cal-day-cell:last-child {
+        border-right: none;
+    }
+    .cal-day-cell.outro-mes {
+        background: #FDFBF8;
+        opacity: 0.55;
+    }
+    .cal-day-cell.hoje {
+        background: #FFFDF7;
+        box-shadow: inset 0 0 0 2px var(--wine-400);
+    }
+
+    .cal-day-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4px;
+    }
+    .cal-day-num {
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--text-primary);
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .cal-day-cell.hoje .cal-day-num {
+        background: var(--wine-600);
+        color: #FFFFFF;
+    }
+
+    /* Badges de Eventos no Calendário */
+    .cal-pill {
+        display: block;
+        padding: 4px 7px;
+        border-radius: var(--radius-xs);
+        font-size: 11px;
+        font-weight: 700;
+        text-decoration: none;
+        cursor: pointer;
+        line-height: 1.25;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+        border: 1px solid transparent;
+        margin-bottom: 2px;
+    }
+    .cal-pill:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+        filter: brightness(0.96);
+    }
+
+    /* Cores das Categorias */
+    .badge-cal-pedido {
+        background: #E8F5E9;
+        color: #1B5E20;
+        border-color: #C8E6C9;
+        border-left: 3px solid #2E7D32;
+    }
+    .badge-cal-fabrica {
+        background: #E3F2FD;
+        color: #0D47A1;
+        border-color: #BBDEFB;
+        border-left: 3px solid #1565C0;
+    }
+    .badge-cal-faccao {
+        background: #FAF0E6;
+        color: var(--wine-900);
+        border-color: #EADBCC;
+        border-left: 3px solid var(--wine-600);
+    }
+    .badge-cal-corte {
+        background: #FFF8E1;
+        color: #8D5B00;
+        border-color: #FFE082;
+        border-left: 3px solid #B78103;
+    }
+
+    /* Modal de Detalhes */
+    .cal-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(35, 25, 27, 0.45);
+        backdrop-filter: blur(2px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+    .cal-modal-card {
+        background: #FFFFFF;
+        border-radius: var(--radius-lg);
+        width: 90%;
+        max-width: 480px;
+        padding: 26px 28px;
+        box-shadow: var(--shadow-xl);
+        position: relative;
+        animation: modalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes modalFadeIn {
+        from { opacity: 0; transform: scale(0.95); }
+        to { opacity: 1; transform: scale(1); }
+    }
+    .cal-modal-close {
+        position: absolute;
+        top: 16px;
+        right: 18px;
+        background: none;
+        border: none;
+        font-size: 22px;
+        color: var(--text-muted);
+        cursor: pointer;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    <!-- 1. KPIs de Execução do Mês -->
+    <div class="cal-kpi-grid">
+        <div class="cal-kpi-card">
+            <div class="cal-kpi-icon" style="background: #E8F5E9; color: #1E6E3C;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+                </svg>
+            </div>
+            <div>
+                <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Pedidos Ativos no Mês</div>
+                <div style="font-size: 22px; font-weight: 800; color: #1E6E3C;">{{ total_pedidos_mes }} <small style="font-size: 13px; font-weight: 600; color: var(--text-muted);">({{ total_pecas_pedidos_mes }} pçs)</small></div>
+            </div>
+        </div>
+
+        <div class="cal-kpi-card">
+            <div class="cal-kpi-icon" style="background: #E3F2FD; color: #1565C0;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="16" height="16" x="4" y="4" rx="2"/>
+                    <rect width="6" height="6" x="9" y="9" rx="1"/>
+                </svg>
+            </div>
+            <div>
+                <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Costura na Fábrica (Interno)</div>
+                <div style="font-size: 22px; font-weight: 800; color: #1565C0;">{{ total_pecas_fabrica_mes }} <small style="font-size: 13px; font-weight: 600; color: var(--text-muted);">pçs em linha</small></div>
+            </div>
+        </div>
+
+        <div class="cal-kpi-card">
+            <div class="cal-kpi-icon" style="background: #FAF0E6; color: var(--wine-700);">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+            </div>
+            <div>
+                <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Facção Externa</div>
+                <div style="font-size: 22px; font-weight: 800; color: var(--wine-800);">{{ total_pecas_faccao_mes }} <small style="font-size: 13px; font-weight: 600; color: var(--text-muted);">pçs em oficinas</small></div>
+            </div>
+        </div>
+
+        <div class="cal-kpi-card">
+            <div class="cal-kpi-icon" style="background: #FFF8E1; color: #B78103;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                </svg>
+            </div>
+            <div>
+                <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Prazos de Entrega do Mês</div>
+                <div style="font-size: 22px; font-weight: 800; color: #B78103;">{{ total_entregas_mes }} <small style="font-size: 13px; font-weight: 600; color: var(--text-muted);">encomendas</small></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Barra de Navegação do Mês & Filtros -->
+    <div class="cal-nav-bar">
+        <div class="cal-nav-arrows">
+            <a href="?ano={{ ano_anterior }}&mes={{ mes_anterior }}&tipo={{ tipo_filtro }}" class="btn-nav-cal" title="Mês Anterior">
+                &larr; {{ mes_anterior|stringformat:"02d" }}/{{ ano_anterior }}
+            </a>
+            
+            <div style="font-size: 18px; font-weight: 800; color: var(--wine-800); min-width: 170px; text-align: center;">
+                {{ mes_nome }} {{ ano }}
+            </div>
+
+            <a href="?ano={{ ano_proximo }}&mes={{ mes_proximo }}&tipo={{ tipo_filtro }}" class="btn-nav-cal" title="Próximo Mês">
+                {{ mes_proximo|stringformat:"02d" }}/{{ ano_proximo }} &rarr;
+            </a>
+
+            <a href="{% url 'calendario_producao' %}" class="btn-nav-cal" style="background: white; border-color: var(--wine-600); color: var(--wine-700);">
+                Mês Atual
+            </a>
+        </div>
+
+        <!-- Filtros Rápidos -->
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+            <span style="font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Filtrar:</span>
+            <a href="?ano={{ ano }}&mes={{ mes }}&tipo=todos" class="cal-filtro-btn {% if tipo_filtro == 'todos' %}active{% endif %}">
+                Todos
+            </a>
+            <a href="?ano={{ ano }}&mes={{ mes }}&tipo=pedidos" class="cal-filtro-btn {% if tipo_filtro == 'pedidos' %}active{% endif %}">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: #2E7D32;"></span>
+                Pedidos Clientes
+            </a>
+            <a href="?ano={{ ano }}&mes={{ mes }}&tipo=fabrica" class="cal-filtro-btn {% if tipo_filtro == 'fabrica' %}active{% endif %}">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: #1565C0;"></span>
+                Costura Fábrica [FAB]
+            </a>
+            <a href="?ano={{ ano }}&mes={{ mes }}&tipo=faccionistas" class="cal-filtro-btn {% if tipo_filtro == 'faccionistas' %}active{% endif %}">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--wine-600);"></span>
+                Faccionistas [FAC]
+            </a>
+            <a href="?ano={{ ano }}&mes={{ mes }}&tipo=cortes" class="cal-filtro-btn {% if tipo_filtro == 'cortes' %}active{% endif %}">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: #B78103;"></span>
+                Cortes
+            </a>
+        </div>
+    </div>
+
+    <!-- 3. Grade Mensal do Calendário -->
+    <div class="calendar-container">
+        <!-- Dias da Semana -->
+        <div class="cal-header-row">
+            <div class="cal-header-cell">Segunda</div>
+            <div class="cal-header-cell">Terça</div>
+            <div class="cal-header-cell">Quarta</div>
+            <div class="cal-header-cell">Quinta</div>
+            <div class="cal-header-cell">Sexta</div>
+            <div class="cal-header-cell">Sábado</div>
+            <div class="cal-header-cell">Domingo</div>
+        </div>
+
+        <!-- Semanas -->
+        {% for semana in semanas %}
+        <div class="cal-week-row">
+            {% for d in semana %}
+            <div class="cal-day-cell {% if not d.pertence_ao_mes %}outro-mes{% endif %} {% if d.eh_hoje %}hoje{% endif %}">
+                <div class="cal-day-top">
+                    <span class="cal-day-num">{{ d.dia_numero }}</span>
+                    {% if d.total_eventos > 0 %}
+                        <span style="font-size: 10px; font-weight: 700; color: var(--text-muted);">{{ d.total_eventos }} ativ.</span>
+                    {% endif %}
+                </div>
+
+                <!-- Eventos do Dia -->
+                {% for ev in d.eventos %}
+                    <div class="cal-pill {{ ev.cor_badge }}" 
+                         onclick="abrirModalEvento('{{ ev.tipo_label }}', '{{ ev.titulo|escapejs }}', '{{ ev.subtitulo|escapejs }}', '{{ ev.status|escapejs }}', '{{ ev.detalhes|escapejs }}', '{{ ev.url }}')"
+                         title="{{ ev.detalhes }}">
+                        {% if ev.eh_entrega %}<strong>[Entrega]</strong> {% endif %}
+                        {{ ev.titulo }} ({{ ev.subtitulo }})
+                    </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+<!-- Modal Interativo de Detalhes do Evento -->
+<div id="modal-cal" class="cal-modal-overlay" onclick="fecharModalEvento(event)">
+    <div class="cal-modal-card" onclick="event.stopPropagation()">
+        <button class="cal-modal-close" onclick="fecharModalEvento()">&times;</button>
+        <span class="tag-pill" id="m-tipo" style="font-size: 11px; text-transform: uppercase; font-weight: 800; margin-bottom: 8px;">Tipo</span>
+        <h3 id="m-titulo" style="color: var(--wine-800); font-size: 18px; font-weight: 800; margin-bottom: 6px;">Título</h3>
+        <div style="font-size: 14px; color: var(--wine-700); font-weight: 700; margin-bottom: 14px;" id="m-subtitulo">Subtítulo</div>
+
+        <div style="background: var(--bg-subtle); padding: 12px 16px; border-radius: var(--radius-sm); border: 1px solid var(--border-light); margin-bottom: 18px;">
+            <div style="font-size: 12.5px; color: var(--text-primary);" id="m-detalhes">Detalhes adicionais</div>
+            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 6px;">
+                Status: <strong id="m-status">-</strong>
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+            <button type="button" class="btn-secondary" onclick="fecharModalEvento()" style="padding: 8px 16px; font-size: 13px;">Fechar</button>
+            <a href="#" id="m-link" class="btn-primary" style="padding: 8px 20px; font-size: 13px; text-decoration: none;">Abrir Registro Completo &rarr;</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function abrirModalEvento(tipo, titulo, subtitulo, status, detalhes, url) {
+        document.getElementById('m-tipo').textContent = tipo;
+        document.getElementById('m-titulo').textContent = titulo;
+        document.getElementById('m-subtitulo').textContent = subtitulo;
+        document.getElementById('m-status').textContent = status;
+        document.getElementById('m-detalhes').textContent = detalhes;
+        document.getElementById('m-link').href = url;
+
+        document.getElementById('modal-cal').style.display = 'flex';
+    }
+
+    function fecharModalEvento(e) {
+        if (!e || e.target.id === 'modal-cal' || e.target.classList.contains('cal-modal-close')) {
+            document.getElementById('modal-cal').style.display = 'none';
+        }
+    }
+</script>
+{% endblock %}

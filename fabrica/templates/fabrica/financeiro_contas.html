@@ -1,0 +1,682 @@
+{% extends 'fabrica/base.html' %}
+{% load static %}
+
+{% block title %}Contas a Pagar & Receber (Conta Azul) - Disfarce{% endblock %}
+{% block breadcrumb %}Financeiro / Contas a Pagar & Receber{% endblock %}
+{% block page_title %}Fluxo de Caixa: Contas a Pagar, Receber & Integração Conta Azul{% endblock %}
+
+{% block extra_head %}
+<style>
+    .fin-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+    .fin-kpi-card {
+        background: #FFFFFF;
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-md);
+        padding: 18px 20px;
+        box-shadow: var(--shadow-sm);
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        transition: transform 0.2s ease;
+    }
+    .fin-kpi-card:hover {
+        transform: translateY(-2px);
+    }
+    .fin-kpi-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: var(--radius-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .badge-tipo-pagar {
+        background: #FDF0F0;
+        color: #A32832;
+        border: 1px solid #F8BAC0;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: var(--radius-full);
+    }
+    .badge-tipo-receber {
+        background: #E8F6EE;
+        color: #1E6E3C;
+        border: 1px solid #BCE7CC;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: var(--radius-full);
+    }
+
+    .conta-azul-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 9px;
+        border-radius: var(--radius-full);
+        background: #EEF4FD;
+        color: #1565C0;
+        border: 1px solid #C8DCFA;
+        white-space: nowrap;
+        font-family: monospace;
+    }
+    .conta-azul-pendente {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 3px 9px;
+        border-radius: var(--radius-full);
+        background: var(--bg-subtle);
+        color: var(--text-muted);
+        border: 1px solid var(--border-light);
+        white-space: nowrap;
+    }
+
+    .tabela-fin {
+        width: 100% !important;
+        border-collapse: collapse;
+        table-layout: auto;
+    }
+    .tabela-fin th {
+        padding: 10px 8px !important;
+        font-size: 11px !important;
+        letter-spacing: 0.3px !important;
+        white-space: nowrap !important;
+        background-color: #FAF5F0;
+        color: var(--wine-700);
+        font-weight: 700;
+        text-transform: uppercase;
+        border-bottom: 1px solid var(--border-light);
+    }
+    .tabela-fin td {
+        padding: 9px 8px !important;
+        font-size: 12px !important;
+        vertical-align: middle !important;
+        border-bottom: 1px solid var(--border-subtle);
+    }
+    .tabela-fin tbody tr:hover {
+        background-color: #FDFBF9;
+    }
+    .tabela-fin th:first-child, .tabela-fin td:first-child {
+        padding-left: 18px !important;
+    }
+    .tabela-fin th:last-child, .tabela-fin td:last-child {
+        padding-right: 18px !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid" style="max-width: 1650px; margin: 0 auto; padding: 0 24px;">
+
+    <!-- 1. KPIs do Fluxo de Caixa do Mês -->
+    <div class="fin-kpi-grid">
+        <div class="fin-kpi-card">
+            <div class="fin-kpi-icon" style="background: #E8F6EE; color: #1E6E3C;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="19" x2="12" y2="5"/>
+                    <polyline points="5 12 12 5 19 12"/>
+                </svg>
+            </div>
+            <div>
+                <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">A Receber no Mês</div>
+                <div style="font-size: 20px; font-weight: 800; color: #1E6E3C;">R$ {{ total_receber_mes|floatformat:2 }}</div>
+                <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 1px;">Quitado: R$ {{ total_recebido_mes|floatformat:2 }}</div>
+            </div>
+        </div>
+
+        <div class="fin-kpi-card">
+            <div class="fin-kpi-icon" style="background: #FDF0F0; color: #A32832;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <polyline points="19 12 12 19 5 12"/>
+                </svg>
+            </div>
+            <div>
+                <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">A Pagar no Mês</div>
+                <div style="font-size: 20px; font-weight: 800; color: #A32832;">R$ {{ total_pagar_mes|floatformat:2 }}</div>
+                <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 1px;">Pago: R$ {{ total_pago_mes|floatformat:2 }}</div>
+            </div>
+        </div>
+
+        <div class="fin-kpi-card">
+            <div class="fin-kpi-icon" style="background: #FAF0E6; color: var(--wine-700);">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="5" width="20" height="14" rx="2"/>
+                    <line x1="2" y1="10" x2="22" y2="10"/>
+                </svg>
+            </div>
+            <div>
+                <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Saldo Projetado (Mês)</div>
+                <div style="font-size: 20px; font-weight: 800; color: {% if saldo_projetado_mes >= 0 %}#1E6E3C{% else %}#A32832{% endif %};">
+                    R$ {{ saldo_projetado_mes|floatformat:2 }}
+                </div>
+                <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 1px;">Realizado: R$ {{ saldo_realizado_mes|floatformat:2 }}</div>
+            </div>
+        </div>
+
+        <div class="fin-kpi-card">
+            <div class="fin-kpi-icon" style="background: #FFF8E1; color: #B78103;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+            </div>
+            <div>
+                <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Contas em Atraso</div>
+                <div style="font-size: 20px; font-weight: 800; color: #B78103;">{{ total_atrasadas }}</div>
+                <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 1px;">R$ {{ valor_atrasado|floatformat:2 }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Barra de Ações & Integração Conta Azul -->
+    <div class="card" style="margin-bottom: 24px; padding: 18px 22px; background: #FAF7F4; border: 1px solid var(--border-medium);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 38px; height: 38px; border-radius: 8px; background: #1565C0; color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px;">
+                    CA
+                </div>
+                <div>
+                    <div style="font-weight: 800; font-size: 14px; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                        <span>Conexão Conta Azul</span>
+                        {% if config_ca.ativo %}
+                            <span class="conta-azul-badge" style="background: #E8F6EE; color: #1E6E3C; border-color: #BCE7CC;">Conectado &bull; Ativo</span>
+                        {% else %}
+                            <span class="conta-azul-pendente">Simulado / Pendente Token</span>
+                        {% endif %}
+                    </div>
+                    <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                        Fluxo de caixa sincronizado para conciliação bancária automática no Conta Azul.
+                    </div>
+                </div>
+            </div>
+
+            {% if request.user.is_superuser %}
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <!-- Botão Novo Lançamento -->
+                <button type="button" class="btn-primary" onclick="document.getElementById('gaveta-novo-lancamento').style.display = (document.getElementById('gaveta-novo-lancamento').style.display === 'block') ? 'none' : 'block';" style="padding: 8px 16px; font-size: 12.5px;">
+                    + Novo Lançamento
+                </button>
+
+                <!-- Botão Importar Produção -->
+                <form method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="acao" value="importar_producao">
+                    <button type="submit" class="btn-secondary" style="padding: 8px 14px; font-size: 12.5px;" title="Cria automaticamente contas a pagar de cortes e facção, e contas a receber dos pedidos">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;">
+                            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                        </svg>
+                        Puxar da Produção & Pedidos
+                    </button>
+                </form>
+
+                <!-- Botão Sincronizar com Conta Azul -->
+                <form method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="acao" value="sincronizar_conta_azul">
+                    <button type="submit" class="btn-secondary" style="padding: 8px 14px; font-size: 12.5px; background: #1565C0; border-color: #1565C0; color: white;" title="Sincroniza transações locais e puxa todas as contas do Conta Azul">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M16 12l-4-4-4 4"/>
+                            <path d="M12 16V8"/>
+                        </svg>
+                        Sincronizar Tudo
+                    </button>
+                </form>
+
+                <!-- Botão Puxar do Conta Azul -->
+                <form method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="acao" value="importar_conta_azul">
+                    <button type="submit" class="btn-secondary" style="padding: 8px 14px; font-size: 12.5px; background: white; border-color: #1565C0; color: #1565C0;" title="Puxa todas as contas a pagar e receber existentes no Conta Azul para o sistema">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        📥 Puxar do Conta Azul
+                    </button>
+                </form>
+
+                <!-- Botão Configuração Conta Azul -->
+                <button type="button" class="btn-atalho" onclick="document.getElementById('modal-config-ca').style.display = 'flex';" style="padding: 8px 12px; font-size: 12px;" title="Configurar chaves da API Conta Azul">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if request.user.is_superuser %}
+    <!-- 3. Gaveta para Lançar Nova Conta (Pagar ou Receber) -->
+    <div id="gaveta-novo-lancamento" class="card" style="display: none; margin-bottom: 24px; border-left: 4px solid var(--wine-600); background: #FAF6F2;">
+        <h4 style="color: var(--wine-800); font-size: 13.5px; text-transform: uppercase; font-weight: 700; margin-bottom: 14px;">
+            Lançar Conta a Pagar / Receber
+        </h4>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="acao" value="criar_transacao">
+
+            <div style="display: grid; grid-template-columns: 160px 2fr 1.5fr 1.5fr 140px; gap: 12px; margin-bottom: 14px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Tipo de Conta *</label>
+                    <select name="tipo" class="form-control" required>
+                        <option value="pagar">Conta a Pagar (Despesa)</option>
+                        <option value="receber">Conta a Receber (Receita)</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Descrição do Lançamento *</label>
+                    <input type="text" name="descricao" placeholder="Ex: Tecido Microfibra Rolo 50m" class="form-control" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Categoria</label>
+                    <select name="categoria" class="form-control">
+                        <option value="Materia-Prima">Matéria-Prima / Tecidos</option>
+                        <option value="Aviamentos">Aviamentos / Elásticos / Rendas</option>
+                        <option value="Faccao">Mão de Obra (Facção Externa)</option>
+                        <option value="Costura-Fabrica">Mão de Obra (Costura Fábrica)</option>
+                        <option value="Corte">Mão de Obra (Corte)</option>
+                        <option value="Salarios">Salários & Encargos</option>
+                        <option value="Fixos">Custos Fixos (Aluguel, Luz, Água)</option>
+                        <option value="Manutencao">Manutenção de Máquinas</option>
+                        <option value="Vendas-Atacado">Receita de Pedidos (Atacado)</option>
+                        <option value="Marketplace">Receita de Marketplaces</option>
+                        <option value="Outros" selected>Outros</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Favorecido / Fornecedor / Cliente</label>
+                    <input type="text" name="cliente_fornecedor" placeholder="Ex: Tecelagem Santa Helena" class="form-control">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Valor (R$) *</label>
+                    <input type="number" step="0.01" name="valor" placeholder="0.00" class="form-control" required>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; gap: 12px; align-items: flex-end;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Data Competência</label>
+                    <input type="date" name="data_competencia" value="{{ hoje|date:'Y-m-d' }}" class="form-control">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Data Vencimento *</label>
+                    <input type="date" name="data_vencimento" value="{{ hoje|date:'Y-m-d' }}" class="form-control" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Forma de Pagamento</label>
+                    <select name="forma_pagamento" class="form-control">
+                        <option value="PIX">PIX</option>
+                        <option value="Boleto">Boleto Bancário</option>
+                        <option value="Transferência">Transferência (TED)</option>
+                        <option value="Cartão">Cartão</option>
+                        <option value="Dinheiro">Dinheiro</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; padding-top: 25px;">
+                        <input type="checkbox" name="ja_pago" style="accent-color: var(--wine-600); width: 16px; height: 16px;">
+                        <span style="font-size: 13px; font-weight: 700; color: #1E6E3C;">Já Quitado / Pago</span>
+                    </label>
+                </div>
+
+                <div>
+                    <button type="submit" class="btn-primary" style="padding: 10px 24px;">Salvar Lançamento</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- 4. Barra de Filtros -->
+    <div class="card" style="padding: 14px 20px; margin-bottom: 24px;">
+        <form method="get" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <label style="font-size: 11.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Tipo:</label>
+                <select name="tipo" class="form-control" style="width: 150px; font-size: 12.5px; padding: 6px 10px;" onchange="this.form.submit()">
+                    <option value="todos" {% if tipo_filtro == 'todos' %}selected{% endif %}>Todos os Tipos</option>
+                    <option value="pagar" {% if tipo_filtro == 'pagar' %}selected{% endif %}>Contas a Pagar</option>
+                    <option value="receber" {% if tipo_filtro == 'receber' %}selected{% endif %}>Contas a Receber</option>
+                </select>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <label style="font-size: 11.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Status:</label>
+                <select name="status" class="form-control" style="width: 160px; font-size: 12.5px; padding: 6px 10px;" onchange="this.form.submit()">
+                    <option value="todos" {% if status_filtro == 'todos' %}selected{% endif %}>Todos os Status</option>
+                    <option value="pendente" {% if status_filtro == 'pendente' %}selected{% endif %}>Pendente / A Vencer</option>
+                    <option value="pago" {% if status_filtro == 'pago' %}selected{% endif %}>Quitado / Pago</option>
+                    <option value="atrasado" {% if status_filtro == 'atrasado' %}selected{% endif %}>Vencido / Atrasado</option>
+                </select>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <label style="font-size: 11.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Período:</label>
+                <select name="periodo" class="form-control" style="width: 150px; font-size: 12.5px; padding: 6px 10px;" onchange="this.form.submit()">
+                    <option value="mes" {% if periodo_filtro == 'mes' %}selected{% endif %}>Este Mês</option>
+                    <option value="semana" {% if periodo_filtro == 'semana' %}selected{% endif %}>Esta Semana</option>
+                    <option value="hoje" {% if periodo_filtro == 'hoje' %}selected{% endif %}>Vencendo Hoje</option>
+                    <option value="atrasados" {% if periodo_filtro == 'atrasados' %}selected{% endif %}>Apenas Atrasados</option>
+                    <option value="todos" {% if periodo_filtro == 'todos' %}selected{% endif %}>Histórico Completo</option>
+                </select>
+            </div>
+
+            <div style="flex: 1; min-width: 180px;">
+                <input type="text" name="q" value="{{ search }}" placeholder="Buscar por descrição, fornecedor, cliente ou ID Conta Azul..." class="form-control" style="font-size: 12.5px; padding: 6px 12px;">
+            </div>
+
+            <button type="submit" class="btn-primary" style="padding: 6px 16px; font-size: 12.5px;">Filtrar</button>
+            {% if search or tipo_filtro != 'todos' or status_filtro != 'todos' or periodo_filtro != 'mes' %}
+                <a href="{% url 'financeiro_contas' %}" class="btn-secondary" style="padding: 6px 12px; font-size: 12px;">Limpar</a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- 5. Tabela de Lançamentos Financeiros -->
+    <div class="table-container" style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border-light); box-shadow: var(--shadow-sm); overflow: hidden; margin-bottom: 28px;">
+        <div class="table-header-box" style="display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; border-bottom: 1px solid var(--border-light); background: #FAF9F7;">
+            <h3 style="margin: 0; font-size: 15.5px; font-weight: 700; color: var(--wine-900);">Extrato Financeiro de Contas a Pagar & Receber</h3>
+            <span class="table-count-badge" style="background: white; border: 1px solid var(--border-light); padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 12px; color: var(--wine-700);">{{ transacoes|length }} lançamentos</span>
+        </div>
+
+        <div class="table-responsive" style="width: 100%; overflow-x: auto;">
+            <table class="data-table tabela-fin" style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th style="width: 80px;">Tipo</th>
+                        <th>Descrição do Lançamento</th>
+                        <th style="width: 125px;">Categoria</th>
+                        <th style="width: 160px;">Favorecido / Cliente</th>
+                        <th style="width: 95px;">Vencimento</th>
+                        <th style="width: 105px;">Valor (R$)</th>
+                        <th style="width: 85px;">Status</th>
+                        <th style="width: 105px;">Conta Azul</th>
+                        {% if request.user.is_superuser %}
+                        <th style="text-align: right; width: 95px;">Ações</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in transacoes %}
+                    <tr>
+                        <td style="white-space: nowrap;">
+                            {% if t.tipo == 'receber' %}
+                                <span class="badge-tipo-receber">&uarr; A Receber</span>
+                            {% else %}
+                                <span class="badge-tipo-pagar">&darr; A Pagar</span>
+                            {% endif %}
+                        </td>
+                        <td style="line-height: 1.35;">
+                            <strong style="color: var(--text-primary); font-size: 12.5px; display: block; word-break: break-word;">{{ t.descricao }}</strong>
+                            {% if t.pedido %}
+                                <div><small style="color: var(--wine-700); font-weight: 600;">Pedido: {{ t.pedido.numero_pedido }}</small></div>
+                            {% elif t.sub_lote %}
+                                <div><small style="color: var(--wine-700); font-weight: 600;">Sub-lote: {{ t.sub_lote.codigo_sub_lote }}</small></div>
+                            {% elif t.lote_corte %}
+                                <div><small style="color: var(--wine-700); font-weight: 600;">Corte: {{ t.lote_corte.codigo_lote }}</small></div>
+                            {% endif %}
+                        </td>
+                        <td style="white-space: nowrap;">
+                            <span class="tag-pill" style="white-space: nowrap;">{{ t.get_categoria_display|default:t.categoria }}</span>
+                        </td>
+                        <td style="word-break: break-word; font-size: 11.5px; color: var(--text-primary); font-weight: 600; line-height: 1.3;">
+                            {{ t.cliente_fornecedor|default:"-" }}
+                        </td>
+                        <td style="white-space: nowrap;">
+                            <div style="font-weight: 700; font-size: 12px;">{{ t.data_vencimento|date:'d/m/Y' }}</div>
+                            {% if t.data_pagamento %}
+                                <small style="color: var(--text-muted); display: block; font-size: 10.5px;">Baixa: {{ t.data_pagamento|date:'d/m/Y' }}</small>
+                            {% endif %}
+                        </td>
+                        <td style="white-space: nowrap;">
+                            <strong style="font-size: 13px; color: {% if t.tipo == 'receber' %}#1E6E3C{% else %}#A32832{% endif %};">
+                                {% if t.tipo == 'receber' %}+{% else %}-{% endif %} R$ {{ t.valor|floatformat:2 }}
+                            </strong>
+                        </td>
+                        <td style="white-space: nowrap;">
+                            {% if t.status == 'pago' %}
+                                <span class="badge badge-success">Quitado</span>
+                            {% elif t.status == 'atrasado' %}
+                                <span class="badge badge-wine">Atrasado</span>
+                            {% else %}
+                                <span class="badge badge-warning">Pendente</span>
+                            {% endif %}
+                        </td>
+                        <td style="white-space: nowrap;">
+                            {% if t.sincronizado_conta_azul %}
+                                <span class="conta-azul-badge" title="ID Conta Azul: {{ t.id_conta_azul }} | Sincronizado em {{ t.ultima_sincronizacao|date:'d/m/Y H:i' }}">
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="20 6 9 17 4 12"/>
+                                    </svg>
+                                    {% if t.id_conta_azul|length > 14 %}
+                                        CA-{{ t.id_conta_azul|slice:":8" }}
+                                    {% else %}
+                                        {{ t.id_conta_azul|default:"Sincronizado" }}
+                                    {% endif %}
+                                </span>
+                            {% else %}
+                                <span class="conta-azul-pendente">Pendente</span>
+                            {% endif %}
+                        </td>
+                        {% if request.user.is_superuser %}
+                        <td style="text-align: right; white-space: nowrap;">
+                            {% if t.status != 'pago' %}
+                                <form method="post" style="display: inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="acao" value="dar_baixa">
+                                    <input type="hidden" name="transacao_id" value="{{ t.id }}">
+                                    <button type="submit" class="btn-acao btn-editar" style="background: #E8F6EE; color: #1E6E3C; border-color: #BCE7CC; padding: 3px 7px; font-size: 10.5px;" title="Marcar como Pago/Recebido">
+                                        Baixar
+                                    </button>
+                                </form>
+                            {% endif %}
+
+                            <form method="post" style="display: inline;" onsubmit="return confirm('Deseja excluir este lançamento?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="acao" value="excluir_transacao">
+                                <input type="hidden" name="transacao_id" value="{{ t.id }}">
+                                <button type="submit" class="btn-acao btn-excluir" style="padding: 3px 7px; font-size: 10.5px;">Excluir</button>
+                            </form>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="{% if request.user.is_superuser %}9{% else %}8{% endif %}" class="empty-state">
+                            <p>Nenhum lançamento financeiro registrado para os filtros selecionados.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- Modal de Conexão & Integração Conta Azul OAuth 2.0 -->
+<div id="modal-config-ca" class="cal-modal-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(35, 25, 27, 0.55); backdrop-filter: blur(2px); display: none; align-items: center; justify-content: center; z-index: 1000;" onclick="if(event.target.id === 'modal-config-ca') document.getElementById('modal-config-ca').style.display='none';">
+    <div style="background: #FFFFFF; border-radius: var(--radius-lg); width: 92%; max-width: 620px; max-height: 90vh; overflow-y: auto; padding: 26px 28px; box-shadow: var(--shadow-xl); position: relative;">
+        <button onclick="document.getElementById('modal-config-ca').style.display='none';" style="position: absolute; top: 16px; right: 18px; background: none; border: none; font-size: 22px; color: var(--text-muted); cursor: pointer;">&times;</button>
+        
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+            <div style="width: 38px; height: 38px; border-radius: 8px; background: #1565C0; color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px;">
+                CA
+            </div>
+            <div>
+                <h3 style="color: var(--wine-900); font-size: 18px; font-weight: 800; margin: 0;">Integração Oficial Conta Azul (OAuth 2.0)</h3>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                    Sincronização em tempo real das contas a pagar e receber para conciliação bancária.
+                </div>
+            </div>
+        </div>
+
+        <!-- Status da Conexão -->
+        <div style="margin: 16px 0; padding: 12px 16px; border-radius: 8px; background: {% if config_ca.access_token %}#E8F6EE; border: 1px solid #BCE7CC;{% else %}#FFF8E1; border: 1px solid #FFE082;{% endif %} display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div>
+                <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: {% if config_ca.access_token %}#1E6E3C{% else %}#B78103{% endif %};">
+                    Status da API:
+                </div>
+                <strong style="font-size: 13.5px; color: {% if config_ca.access_token %}#1E6E3C{% else %}#B78103{% endif %};">
+                    {% if config_ca.access_token %}
+                        🟢 Conectado & Autenticado via OAuth 2.0
+                    {% else %}
+                        🟡 Aguardando Autorização do Conta Azul
+                    {% endif %}
+                </strong>
+                {% if config_ca.ultima_sincronizacao %}
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+                    Última sincronização: {{ config_ca.ultima_sincronizacao|date:'d/m/Y H:i' }}
+                </div>
+                {% endif %}
+            </div>
+
+            {% if config_ca.refresh_token %}
+            <form method="post" style="display: inline;">
+                {% csrf_token %}
+                <input type="hidden" name="acao" value="renovar_token_conta_azul">
+                <button type="submit" class="btn-secondary" style="font-size: 11.5px; padding: 6px 12px; background: white;" title="Renova o access_token utilizando o refresh_token">
+                    🔄 Renovar Token
+                </button>
+            </form>
+            {% endif %}
+        </div>
+
+        <!-- PASSO A PASSO GUIADO OAUTH 2.0 -->
+        <div style="border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 16px; margin-bottom: 20px; background: #FAF9F7;">
+            <h4 style="font-size: 13.5px; color: var(--wine-900); font-weight: 700; margin: 0 0 10px 0;">
+                Passo 1: Fazer Login e Autorizar no Conta Azul
+            </h4>
+            <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">
+                Clique no botão abaixo para abrir a tela de autorização oficial do Conta Azul e permitir o acesso:
+            </p>
+
+            <div style="margin-bottom: 14px;">
+                <a href="{{ url_autorizacao_ca }}" target="_blank" class="btn-primary" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; font-size: 13px; text-decoration: none; background: #1565C0;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                    <span>Abrir Tela de Autorização do Conta Azul &rarr;</span>
+                </a>
+            </div>
+
+            <!-- Credenciais do Usuário ERP Sandbox (Para Testes) -->
+            <div style="background: white; border: 1px solid var(--border-light); border-radius: 6px; padding: 10px 14px; font-size: 12px; margin-bottom: 14px;">
+                <span style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 6px;">
+                    Credenciais do ERP Sandbox (Se solicitado no login):
+                </span>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <span>Usuário: <code>{{ config_ca.usuario_erp|default:"ca850e25-0ce7-4d3c-8609-c7c9e5c5ec22@devportal.com" }}</code></span>
+                    <button type="button" onclick="navigator.clipboard.writeText('{{ config_ca.usuario_erp|default:"ca850e25-0ce7-4d3c-8609-c7c9e5c5ec22@devportal.com" }}'); alert('Usuário copiado!');" style="background: none; border: 1px solid #ccc; border-radius: 4px; padding: 2px 8px; font-size: 10.5px; cursor: pointer;">Copiar</button>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>Senha: <code>{{ config_ca.senha_erp|default:"Cca850e25-0ce7-4d3c-8609-c7c9e5c5ec22" }}</code></span>
+                    <button type="button" onclick="navigator.clipboard.writeText('{{ config_ca.senha_erp|default:"Cca850e25-0ce7-4d3c-8609-c7c9e5c5ec22" }}'); alert('Senha copiada!');" style="background: none; border: 1px solid #ccc; border-radius: 4px; padding: 2px 8px; font-size: 10.5px; cursor: pointer;">Copiar</button>
+                </div>
+            </div>
+
+            <h4 style="font-size: 13.5px; color: var(--wine-900); font-weight: 700; margin: 16px 0 8px 0; border-top: 1px dashed var(--border-light); padding-top: 14px;">
+                Passo 2: Conectar o Código de Autorização Retornado
+            </h4>
+            <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">
+                Após autorizar, o Conta Azul redireciona para a URL configurada. Copie a URL ou o código (ex: <code>code=XXXXX</code>) e cole abaixo:
+            </p>
+
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="acao" value="trocar_codigo_conta_azul">
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" name="codigo_autorizacao" placeholder="Cole aqui o código ou a URL completa (https://contaazul.com/?code=...)" class="form-control" style="font-size: 12.5px;" required>
+                    <button type="submit" class="btn-primary" style="white-space: nowrap; padding: 0 16px; font-size: 12.5px; background: #1565C0;">
+                        Conectar & Obter Tokens
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- SANFONA: CONFIGURAÇÕES AVANÇADAS / TOKENS MANUAIS -->
+        <details style="border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 16px;">
+            <summary style="font-size: 12.5px; font-weight: 700; color: var(--wine-700); cursor: pointer;">
+                ⚙️ Configurações Avançadas & Credenciais de Produção
+            </summary>
+            
+            <form method="post" style="margin-top: 14px;">
+                {% csrf_token %}
+                <input type="hidden" name="acao" value="salvar_config_conta_azul">
+
+                <div class="form-group" style="margin-bottom: 10px;">
+                    <label style="font-size: 11.5px;">Client ID</label>
+                    <input type="text" name="client_id" value="{{ config_ca.client_id|default:'' }}" class="form-control" style="font-size: 12px;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 10px;">
+                    <label style="font-size: 11.5px;">Client Secret (Opcional se usar Basic Auth)</label>
+                    <input type="password" name="client_secret" value="{{ config_ca.client_secret|default:'' }}" class="form-control" style="font-size: 12px;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 10px;">
+                    <label style="font-size: 11.5px;">Header Authorization Basic (Base64)</label>
+                    <input type="text" name="basic_auth" value="{{ config_ca.basic_auth|default:'' }}" class="form-control" style="font-size: 12px;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 10px;">
+                    <label style="font-size: 11.5px;">Redirect URI</label>
+                    <input type="text" name="redirect_uri" value="{{ config_ca.redirect_uri|default:'https://contaazul.com' }}" class="form-control" style="font-size: 12px;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 10px;">
+                    <label style="font-size: 11.5px;">Access Token</label>
+                    <textarea name="access_token" rows="2" class="form-control" style="font-size: 11.5px;">{{ config_ca.access_token|default:'' }}</textarea>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label style="font-size: 11.5px;">Refresh Token</label>
+                    <textarea name="refresh_token" rows="2" class="form-control" style="font-size: 11.5px;">{{ config_ca.refresh_token|default:'' }}</textarea>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 14px;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" name="ativo" {% if config_ca.ativo %}checked{% endif %} style="width: 16px; height: 16px; accent-color: #1565C0;">
+                        <span style="font-size: 12.5px; font-weight: 700; color: #1565C0;">Integração Ativa com Conta Azul</span>
+                    </label>
+                </div>
+
+                <div style="text-align: right;">
+                    <button type="submit" class="btn-secondary" style="padding: 7px 18px; font-size: 12px;">Salvar Parâmetros Avançados</button>
+                </div>
+            </form>
+        </details>
+
+        <div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--border-light); padding-top: 14px;">
+            <button type="button" class="btn-secondary" onclick="document.getElementById('modal-config-ca').style.display='none';" style="padding: 8px 20px;">Fechar</button>
+        </div>
+    </div>
+</div>
+{% endblock %}

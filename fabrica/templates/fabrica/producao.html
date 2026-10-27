@@ -1,0 +1,509 @@
+{% extends 'fabrica/base.html' %}
+{% load static %}
+
+{% block title %}Produção & Sub-lotes - Disfarce{% endblock %}
+{% block breadcrumb %}Produção & Costura{% endblock %}
+{% block page_title %}Distribuição e Controle de Produção (Costura & Facção){% endblock %}
+
+{% block content %}
+<div class="container">
+    
+    {% if request.user.is_superuser %}
+    <!-- Formulário de Criação de Sub-lote -->
+    <div class="card" style="margin-bottom: 28px;">
+        <div class="card-header">
+            <h3>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                    <polyline points="2 17 12 22 22 17"/>
+                    <polyline points="2 12 12 17 22 12"/>
+                </svg>
+                Distribuir Sub-lote para Costura (Interno ou Facção)
+            </h3>
+        </div>
+        
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="acao" value="criar_sub_lote">
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 16px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Lote de Corte de Origem *</label>
+                    <select name="lote_corte" id="select-lote-corte" class="form-control" onchange="aoSelecionarLote(this.value)" required>
+                        <option value="">Selecione o corte em aberto...</option>
+                        <optgroup label="Lotes em Aberto (Saldo Disponível)">
+                            {% for lc in lotes_corte_abertos %}
+                                {% if lc.quantidade_disponivel > 0 or lc.quantidade_total_pecas == 0 %}
+                                    <option value="{{ lc.id }}" {% if request.GET.lote_id == lc.id|stringformat:'s' %}selected{% endif %}>
+                                        Lote {{ lc.codigo_lote }} - {{ lc.produto.sku }} ({{ lc.get_status_display }} | Saldo: {{ lc.quantidade_disponivel }} pçs)
+                                    </option>
+                                {% endif %}
+                            {% endfor %}
+                        </optgroup>
+                        <optgroup label="Lotes Totalmente Distribuídos">
+                            {% for lc in lotes_corte_abertos %}
+                                {% if lc.quantidade_disponivel <= 0 and lc.quantidade_total_pecas > 0 %}
+                                    <option value="{{ lc.id }}" {% if request.GET.lote_id == lc.id|stringformat:'s' %}selected{% endif %}>
+                                        Lote {{ lc.codigo_lote }} - {{ lc.produto.sku }} (Distribuído: {{ lc.quantidade_total_pecas }} pçs)
+                                    </option>
+                                {% endif %}
+                            {% endfor %}
+                        </optgroup>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Destino da Confecção *</label>
+                    <select name="destino" id="select-destino" class="form-control" onchange="aoMudarDestino(this.value)" required>
+                        <option value="fabrica_interna">Costura Interna (Fábrica) [FAB]</option>
+                        <option value="faccionista">Faccionista Externa [FAC]</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Código do Sub-lote *</label>
+                    <input type="text" name="codigo_sub_lote" id="input-codigo-sub-lote" placeholder="Ex: FAB-LOTE-001-01" class="form-control" required>
+                    <small style="color: var(--text-muted); font-size: 11px;">Prefixo FAB/FAC gerado com sequencial do lote.</small>
+                </div>
+
+                <div class="form-group" id="div-faccionista" style="margin-bottom: 0; display: none;">
+                    <label>Faccionista Parceira</label>
+                    <select name="faccionista" id="select-faccionista" class="form-control">
+                        <option value="">Selecione a faccionista...</option>
+                        {% for fac in faccionistas %}
+                            <option value="{{ fac.id }}">{{ fac.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group" id="div-costureira" style="margin-bottom: 0;">
+                    <label>Costureira Fábrica</label>
+                    <select name="costureira_interna" id="select-costureira" class="form-control">
+                        <option value="">Costura Geral (Sem costureira específica)</option>
+                        {% for cost in costureiras_internas %}
+                            <option value="{{ cost.id }}">{{ cost.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Etapa / Processo</label>
+                    <input type="text" name="processo_faccionista" placeholder="Ex: Fechamento, Montagem" class="form-control">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Data de Envio</label>
+                    <input type="date" name="data_envio" class="form-control">
+                </div>
+            </div>
+
+            <!-- Painel Informativo do Lote Selecionado -->
+            <div id="painel-lote-selecionado" style="display: none; background: #FAF5F0; border: 1px solid #EADBCC; border-left: 4px solid var(--wine-600); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px;">
+                <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: center; justify-content: space-between;">
+                    <div>
+                        <span style="font-size: 10.5px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.5px;">Corte Selecionado</span>
+                        <div style="font-size: 14px; font-weight: 700; color: var(--wine-800);" id="info-lote-codigo">-</div>
+                        <div style="font-size: 12px; color: var(--text-secondary);" id="info-lote-produto">-</div>
+                    </div>
+                    <div>
+                        <span style="font-size: 10.5px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.5px;">Status do Corte</span>
+                        <div><span class="tag-pill" id="info-lote-status">-</span></div>
+                    </div>
+                    <div>
+                        <span style="font-size: 10.5px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.5px;">Saldo Disponível</span>
+                        <div style="font-size: 15px; font-weight: 800; color: #1E6E3C;" id="info-lote-saldo">-</div>
+                    </div>
+                    <div id="btn-preencher-grade-box" style="display: none;">
+                        <button type="button" class="btn-atalho" onclick="carregarGradeDoLote()" style="font-size: 11.5px; padding: 6px 12px; background: white; border: 1px solid var(--border-medium); cursor: pointer;">
+                            <span>Importar Grade do Corte</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grade de Peças -->
+            <div style="border-top: 1px solid var(--border-light); padding-top: 18px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <h4 style="color: var(--wine-700); font-size: 12px; margin-bottom: 0; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 700;">
+                        Grade de Peças Alocadas para este Sub-lote:
+                    </h4>
+                    <div id="indicador-total-alocado" style="font-size: 12.5px; font-weight: 700; color: var(--text-secondary);">
+                        Total a distribuir: <span id="span-total-alocado" style="color: var(--wine-700);">0</span> pçs
+                    </div>
+                </div>
+
+                <div id="aviso-saldo-excedido" style="display: none; background: var(--status-danger-bg); color: var(--status-danger-text); border: 1px solid var(--status-danger-border); padding: 8px 14px; border-radius: var(--radius-xs); margin-bottom: 12px; font-size: 12.5px; font-weight: 600;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <span id="texto-aviso-saldo">A quantidade distribuída excede o saldo disponível do lote!</span>
+                </div>
+                
+                <div id="grade-container">
+                    <div class="grade-row">
+                        <input type="text" name="cor[]" placeholder="Cor / Estampa" class="form-control" required>
+                        <select name="tamanho[]" class="form-control" required>
+                            <option value="">Tamanho...</option>
+                            <option value="P">P</option>
+                            <option value="M">M</option>
+                            <option value="G">G</option>
+                            <option value="GG">GG</option>
+                        </select>
+                        <input type="number" name="quantidade_pecas[]" placeholder="Qtd Peças" min="1" class="form-control input-qtd-grade" oninput="calcularTotalGrade()" required>
+                        <button type="button" class="btn-remover-linha" onclick="removerLinhaGrade(this)" title="Remover">&times;</button>
+                    </div>
+                </div>
+
+                <button type="button" class="btn-adicionar" onclick="adicionarLinha()">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span>Adicionar Cor / Tamanho</span>
+                </button>
+            </div>
+
+            <div style="margin-top: 16px; text-align: right; border-top: 1px solid var(--border-light); padding-top: 14px;">
+                <button type="submit" id="btn-submit-sub-lote" class="btn-primary" style="padding: 11px 26px;">Salvar e Distribuir Sub-lote</button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- Tabela de Sub-lotes em Produção -->
+    <div class="table-container">
+        <div class="table-header-box">
+            <h3>Sub-lotes em Produção & Acompanhamento de Costura</h3>
+            <span class="table-count-badge">{{ lotes_producao|length }} sub-lotes</span>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="min-width: 190px;">Sub-lote / Origem</th>
+                        <th style="min-width: 180px;">Destino & Processo</th>
+                        <th style="min-width: 160px;">Datas (Envio & Retorno)</th>
+                        <th style="min-width: 140px;">Qtd Peças (Envio / Real)</th>
+                        <th style="min-width: 130px;">Status</th>
+                        <th style="text-align: right; min-width: 150px;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sub in lotes_producao %}
+                    <tr>
+                        <td style="min-width: 190px;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 3px;">
+                                <strong style="color: var(--wine-800); font-size: 13.5px; font-weight: 700; white-space: nowrap;">{{ sub.codigo_sub_lote }}</strong>
+                            </div>
+                            <div style="font-size: 12px; color: var(--text-muted); white-space: nowrap;">
+                                Corte Origem: <strong style="color: var(--wine-700);">{% if 'lote' in sub.lote_corte.codigo_lote|lower %}{{ sub.lote_corte.codigo_lote }}{% else %}Lote {{ sub.lote_corte.codigo_lote }}{% endif %}</strong>
+                            </div>
+                        </td>
+                        <td>
+                            {% if sub.faccionista %}
+                                {% if sub.faccionista.tipo == 'costureira_interna' %}
+                                    <span class="badge badge-info" style="font-size: 11px;">Costura Interna</span>
+                                    <div style="font-weight: 600; color: var(--text-primary); margin-top: 3px;">{{ sub.faccionista.nome }}</div>
+                                    {% if sub.processo_faccionista %}
+                                        <span class="tag-pill" style="font-size: 10.5px; margin-top: 2px;">{{ sub.processo_faccionista }}</span>
+                                    {% endif %}
+                                {% else %}
+                                    <div style="font-weight: 600; color: var(--wine-700);">{{ sub.faccionista.nome }}</div>
+                                    <span class="tag-pill" style="font-size: 11px;">{{ sub.processo_faccionista|default:"Costura geral" }}</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge badge-wine" style="font-size: 11px;">Costura Interna</span>
+                                <div style="color: var(--text-muted); font-size: 11.5px; margin-top: 2px;">Geral da Fábrica</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="font-size: 12px; color: var(--text-secondary);">
+                                Envio: <strong>{{ sub.data_envio|default:"-" }}</strong>
+                            </div>
+                            <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                                Retorno: <strong>{{ sub.data_retorno|default:"Pendente" }}</strong>
+                            </div>
+                        </td>
+                        <td>
+                            <div style="font-size: 12px; color: var(--text-muted);">Enviada: <strong>{{ sub.quantidade_enviada }} pçs</strong></div>
+                            <div style="font-size: 13.5px; font-weight: 700; color: var(--wine-700);">Real: {{ sub.quantidade_real_costurada }} pçs</div>
+                        </td>
+                        <td>
+                            {% if sub.status == 'concluido' %}
+                                <span class="badge badge-success">{{ sub.get_status_display }}</span>
+                            {% elif sub.status == 'enviado_faccionista' %}
+                                <span class="badge badge-info">{{ sub.get_status_display }}</span>
+                            {% else %}
+                                <span class="badge badge-wine">{{ sub.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: right; white-space: nowrap;">
+                            {% if sub.faccionista %}
+                                <a href="{% url 'relatorio_faccionista' sub.id %}" target="_blank" class="btn-acao btn-editar" title="Imprimir Romaneio de Costura">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="6 9 6 2 18 2 18 9"/>
+                                        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                                        <rect width="12" height="8" x="6" y="14"/>
+                                    </svg>
+                                    Romaneio
+                                </a>
+                            {% endif %}
+                            <button type="button" class="btn-expandir" onclick="toggleDetalhes('detalhes-{{ sub.id }}')" style="display: inline-flex; align-items: center; gap: 6px;">
+                                <span>Retorno / Custo</span>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                    
+                    <!-- Gaveta de Retorno e Fechamento -->
+                    <tr>
+                        <td colspan="6" style="padding: 0; border: none;">
+                            <div id="detalhes-{{ sub.id }}" class="detalhes-sub">
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="acao" value="editar_sub_lote">
+                                    <input type="hidden" name="sub_lote_id" value="{{ sub.id }}">
+                                    
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 16px;">
+                                        <div class="form-group" style="margin-bottom: 0;">
+                                            <label>Status Atual:</label>
+                                            <select name="status" class="form-control" {% if not request.user.is_superuser %}disabled{% else %}required{% endif %}>
+                                                <option value="fabrica_interna" {% if sub.status == 'fabrica_interna' %}selected{% endif %}>Costura Interna</option>
+                                                <option value="enviado_faccionista" {% if sub.status == 'enviado_faccionista' %}selected{% endif %}>Enviado para Faccionista</option>
+                                                <option value="concluido" {% if sub.status == 'concluido' %}selected{% endif %}>Concluído / Retornado</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group" style="margin-bottom: 0;">
+                                            <label>Qtd Real Retornada (Boas):</label>
+                                            <input type="number" name="quantidade_real_costurada" value="{{ sub.quantidade_real_costurada }}" class="form-control" {% if not request.user.is_superuser %}readonly{% else %}required{% endif %} title="Descontando eventuais refugos ou defeitos">
+                                        </div>
+                                        <div class="form-group" style="margin-bottom: 0;">
+                                            <label>Vlr Unitário de Costura (R$):</label>
+                                            <input type="number" step="0.01" name="valor_unitario_costura" value="{{ sub.valor_unitario_costura|stringformat:'.2f' }}" class="form-control" {% if not request.user.is_superuser %}readonly{% endif %}>
+                                        </div>
+                                        <div class="form-group" style="margin-bottom: 0;">
+                                            <label>Data de Envio:</label>
+                                            <input type="date" name="data_envio" value="{{ sub.data_envio|date:'Y-m-d' }}" class="form-control" {% if not request.user.is_superuser %}readonly{% endif %}>
+                                        </div>
+                                        <div class="form-group" style="margin-bottom: 0;">
+                                            <label>Data de Retorno:</label>
+                                            <input type="date" name="data_retorno" value="{{ sub.data_retorno|date:'Y-m-d' }}" class="form-control" {% if not request.user.is_superuser %}readonly{% endif %}>
+                                        </div>
+                                    </div>
+
+                                    {% if request.user.is_superuser %}
+                                    <div style="text-align: right; border-top: 1px solid var(--border-light); padding-top: 12px;">
+                                        <button type="submit" class="btn-primary" style="padding: 9px 20px;">Salvar Retorno do Sub-lote</button>
+                                    </div>
+                                    {% endif %}
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <p>Nenhum sub-lote de produção criado.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const lotesData = {{ lotes_info_json|safe }};
+
+    function toggleFaccionista(val) {
+        const divFac = document.getElementById('div-faccionista');
+        const selFac = document.getElementById('select-faccionista');
+        const divCost = document.getElementById('div-costureira');
+        if (val === 'faccionista') {
+            if (divFac) divFac.style.display = 'block';
+            if (selFac) selFac.required = true;
+            if (divCost) divCost.style.display = 'none';
+        } else {
+            if (divFac) divFac.style.display = 'none';
+            if (selFac) selFac.required = false;
+            if (divCost) divCost.style.display = 'block';
+        }
+    }
+
+    function atualizarCodigo() {
+        const loteSelect = document.getElementById('select-lote-corte');
+        const destinoSelect = document.getElementById('select-destino');
+        const codigoInput = document.getElementById('input-codigo-sub-lote');
+        
+        const loteId = loteSelect ? loteSelect.value : '';
+        const destino = destinoSelect ? destinoSelect.value : 'fabrica_interna';
+        
+        if (loteId && lotesData[loteId]) {
+            const info = lotesData[loteId];
+            if (destino === 'faccionista') {
+                codigoInput.value = info.proximo_fac;
+            } else {
+                codigoInput.value = info.proximo_fab;
+            }
+        }
+    }
+
+    function aoMudarDestino(val) {
+        toggleFaccionista(val);
+        atualizarCodigo();
+    }
+
+    function aoSelecionarLote(loteId) {
+        const painel = document.getElementById('painel-lote-selecionado');
+        if (!loteId || !lotesData[loteId]) {
+            painel.style.display = 'none';
+            return;
+        }
+        
+        const info = lotesData[loteId];
+        document.getElementById('info-lote-codigo').textContent = 'Lote ' + info.codigo;
+        document.getElementById('info-lote-produto').textContent = info.produto_sku + ' - ' + info.produto_nome;
+        document.getElementById('info-lote-status').textContent = info.status_display;
+        document.getElementById('info-lote-saldo').textContent = info.quantidade_disponivel + ' de ' + info.quantidade_total + ' pçs disponíveis';
+        
+        const btnBox = document.getElementById('btn-preencher-grade-box');
+        if (info.grades && info.grades.length > 0) {
+            btnBox.style.display = 'block';
+        } else {
+            btnBox.style.display = 'none';
+        }
+        
+        painel.style.display = 'block';
+        atualizarCodigo();
+        calcularTotalGrade();
+    }
+
+    function calcularTotalGrade() {
+        const loteSelect = document.getElementById('select-lote-corte');
+        const loteId = loteSelect ? loteSelect.value : '';
+        const saldoMax = (loteId && lotesData[loteId]) ? parseInt(lotesData[loteId].quantidade_disponivel || 0) : null;
+        
+        const inputsQtd = document.querySelectorAll('.input-qtd-grade');
+        let total = 0;
+        inputsQtd.forEach(input => {
+            const val = parseInt(input.value) || 0;
+            if (val > 0) total += val;
+        });
+
+        const spanTotal = document.getElementById('span-total-alocado');
+        if (spanTotal) spanTotal.textContent = total;
+
+        const aviso = document.getElementById('aviso-saldo-excedido');
+        const btnSubmit = document.getElementById('btn-submit-sub-lote');
+        const textoAviso = document.getElementById('texto-aviso-saldo');
+
+        if (saldoMax !== null && total > saldoMax) {
+            if (aviso) {
+                textoAviso.textContent = `Atenção: A quantidade total a distribuir (${total} pçs) excede o saldo disponível do lote (${saldoMax} pçs). Não é permitido gerar saldo negativo!`;
+                aviso.style.display = 'block';
+            }
+            if (btnSubmit) {
+                btnSubmit.disabled = true;
+                btnSubmit.style.opacity = '0.5';
+                btnSubmit.style.cursor = 'not-allowed';
+            }
+        } else {
+            if (aviso) aviso.style.display = 'none';
+            if (btnSubmit) {
+                btnSubmit.disabled = false;
+                btnSubmit.style.opacity = '1';
+                btnSubmit.style.cursor = 'pointer';
+            }
+        }
+    }
+
+    function removerLinhaGrade(btn) {
+        const row = btn.parentElement;
+        const container = document.getElementById('grade-container');
+        if (container.querySelectorAll('.grade-row').length > 1) {
+            row.remove();
+        } else {
+            row.querySelectorAll('input').forEach(i => i.value = '');
+            row.querySelectorAll('select').forEach(s => s.selectedIndex = 0);
+        }
+        calcularTotalGrade();
+    }
+
+    function carregarGradeDoLote() {
+        const loteSelect = document.getElementById('select-lote-corte');
+        const loteId = loteSelect ? loteSelect.value : '';
+        if (!loteId || !lotesData[loteId]) return;
+        
+        const info = lotesData[loteId];
+        if (!info.grades || info.grades.length === 0) return;
+        
+        const container = document.getElementById('grade-container');
+        container.innerHTML = '';
+        
+        info.grades.forEach(g => {
+            let nova = document.createElement('div');
+            nova.className = 'grade-row';
+            const tam = (g.tamanho || '').toUpperCase().trim();
+            nova.innerHTML = `
+                <input type="text" name="cor[]" value="${g.cor}" placeholder="Cor / Estampa" class="form-control" required>
+                <select name="tamanho[]" class="form-control" required>
+                    <option value="">Tamanho...</option>
+                    <option value="P" ${tam === 'P' ? 'selected' : ''}>P</option>
+                    <option value="M" ${tam === 'M' ? 'selected' : ''}>M</option>
+                    <option value="G" ${tam === 'G' ? 'selected' : ''}>G</option>
+                    <option value="GG" ${tam === 'GG' ? 'selected' : ''}>GG</option>
+                </select>
+                <input type="number" name="quantidade_pecas[]" value="${g.quantidade}" placeholder="Qtd Peças" min="1" class="form-control input-qtd-grade" oninput="calcularTotalGrade()" required>
+                <button type="button" class="btn-remover-linha" onclick="removerLinhaGrade(this)" title="Remover">&times;</button>
+            `;
+            container.appendChild(nova);
+        });
+        calcularTotalGrade();
+    }
+
+    function toggleDetalhes(id) {
+        let el = document.getElementById(id);
+        el.style.display = (el.style.display === 'block') ? 'none' : 'block';
+    }
+
+    function adicionarLinha() {
+        let container = document.getElementById('grade-container');
+        let nova = document.createElement('div');
+        nova.className = 'grade-row';
+        nova.innerHTML = `
+            <input type="text" name="cor[]" placeholder="Cor / Estampa" class="form-control" required>
+            <select name="tamanho[]" class="form-control" required>
+                <option value="">Tamanho...</option>
+                <option value="P">P</option>
+                <option value="M">M</option>
+                <option value="G">G</option>
+                <option value="GG">GG</option>
+            </select>
+            <input type="number" name="quantidade_pecas[]" placeholder="Qtd Peças" min="1" class="form-control input-qtd-grade" oninput="calcularTotalGrade()" required>
+            <button type="button" class="btn-remover-linha" onclick="removerLinhaGrade(this)" title="Remover">&times;</button>
+        `;
+        container.appendChild(nova);
+    }
+
+    // Inicialização ao carregar página (caso venha preenchido via GET ou recarregamento)
+    document.addEventListener('DOMContentLoaded', function() {
+        const loteSelect = document.getElementById('select-lote-corte');
+        const destinoSelect = document.getElementById('select-destino');
+        if (destinoSelect) {
+            toggleFaccionista(destinoSelect.value);
+        }
+        if (loteSelect && loteSelect.value) {
+            aoSelecionarLote(loteSelect.value);
+        }
+    });
+</script>
+{% endblock %}

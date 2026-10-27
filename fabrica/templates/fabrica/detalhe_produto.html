@@ -1,0 +1,616 @@
+{% extends 'fabrica/base.html' %}
+{% load static %}
+
+{% block title %}{{ produto.sku }} - Ficha Técnica & Custos - Disfarce{% endblock %}
+{% block breadcrumb %}
+    <a href="{% url 'produtos' %}" style="color: inherit; text-decoration: none;">Produtos</a> &rsaquo; {{ produto.sku }}
+{% endblock %}
+{% block page_title %}{{ produto.sku }} — {{ produto.nome }}{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    <!-- Barra Superior de Navegação e Ações Rápidas -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <a href="{% url 'produtos' %}" class="btn-secondary" style="padding: 8px 14px; font-size: 12.5px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                <span>Voltar ao Catálogo</span>
+            </a>
+            <span class="tag-pill" style="font-size: 12px; padding: 5px 12px;">{{ produto.categoria.nome }}</span>
+            <span class="badge badge-success" style="font-size: 11px;">{{ produto.get_status_display }}</span>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <button onclick="window.print()" class="btn-secondary" style="padding: 8px 14px; font-size: 12.5px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                    <rect width="12" height="8" x="6" y="14"></rect>
+                </svg>
+                <span>Imprimir Ficha Técnica</span>
+            </button>
+            {% if request.user.is_superuser %}
+            <a href="{% url 'editar_produto' produto.id %}" class="btn-primary" style="padding: 8px 16px; font-size: 12.5px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
+                </svg>
+                <span>Editar Produto</span>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Cards de Resumo e Custo de Produção -->
+    <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+        <!-- Custo de Matéria-Prima -->
+        <div class="stat-card">
+            <div class="stat-card-header">
+                <h4>Custo Matéria-Prima</h4>
+                <div class="stat-card-icon green">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" x2="12" y1="2" y2="22"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="value" style="color: #1E6E3C;">R$ {{ total_custo_materia_prima|floatformat:2 }}</div>
+            <div class="stat-desc">
+                <span class="tag-pill">{{ materias_primas|length }} insumos cadastrados</span>
+            </div>
+        </div>
+
+        <!-- Tempo Padrão da Peça (TP) -->
+        <div class="stat-card" style="border-left: 3px solid var(--wine-700);">
+            <div class="stat-card-header">
+                <h4>Tempo Padrão (TP)</h4>
+                <div class="stat-card-icon" style="background: rgba(106, 17, 36, 0.1); color: var(--wine-700);">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                </div>
+            </div>
+            <div class="value" style="color: var(--wine-900);">
+                {% if tempo_padrao_total > 0 %}{{ tempo_padrao_total|floatformat:3 }} min{% else %}—{% endif %}
+            </div>
+            <div class="stat-desc">
+                <span class="tag-pill">c/ Pcte: {{ tempo_padrao_pcte_total|floatformat:3 }} min</span>
+            </div>
+        </div>
+
+        <!-- Capacidade de Produção -->
+        <div class="stat-card">
+            <div class="stat-card-header">
+                <h4>Capacidade Nominal</h4>
+                <div class="stat-card-icon blue">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                        <polyline points="17 6 23 6 23 12"></polyline>
+                    </svg>
+                </div>
+            </div>
+            <div class="value" style="color: #2B6CB0;">
+                {% if pecas_por_hora > 0 %}{{ pecas_por_hora }} pç/h{% else %}—{% endif %}
+            </div>
+            <div class="stat-desc">
+                <span class="tag-pill">~ {{ pecas_por_dia }} peças / dia (8h)</span>
+            </div>
+        </div>
+
+        <!-- Custo de Mão de Obra -->
+        <div class="stat-card">
+            <div class="stat-card-header">
+                <h4>Custo Mão de Obra</h4>
+                <div class="stat-card-icon amber">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+            </div>
+            <div class="value" style="color: #C07D18;">R$ {{ custo_mao_de_obra|floatformat:2 }}</div>
+            <div class="stat-desc">
+                <span class="tag-pill">R$ {{ custo_minuto|floatformat:2 }}/min</span>
+            </div>
+        </div>
+
+        <!-- Custo Total de Produção -->
+        <div class="stat-card" style="background: #FAF5F0; border: 1.5px solid var(--wine-200);">
+            <div class="stat-card-header">
+                <h4 style="color: var(--wine-900); font-weight: 700;">Custo Total / Peça</h4>
+                <div class="stat-card-icon" style="background: var(--wine-700); color: white;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="value" style="color: var(--wine-900);">R$ {{ custo_producao_total|floatformat:2 }}</div>
+            <div class="stat-desc">
+                <span class="tag-pill" style="background: white;">Insumos + Costura</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- SEÇÃO 1: GASTO DE MATÉRIA-PRIMA & CUSTO DE PRODUÇÃO (BOM) -->
+    <div class="card" style="margin-bottom: 28px;">
+        <div class="card-header">
+            <div>
+                <h3>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" x2="12" y1="2" y2="22"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                    Gasto de Matéria-Prima & Custo de Produção por Peça
+                </h3>
+                <p style="font-size: 12.5px; color: var(--text-muted); margin-top: 4px;">
+                    Cadastre o consumo unitário de cada tecido, renda, elástico, bojo e aviamento para calcular automaticamente o custo de matéria-prima por peça.
+                </p>
+            </div>
+        </div>
+
+        {% if request.user.is_superuser %}
+        <!-- Formulário Rápido para Adicionar Matéria-Prima Vinculada ao Catálogo -->
+        <form action="{% url 'adicionar_insumo_produto' produto.id %}" method="post" style="background: var(--bg-subtle); padding: 18px 20px; border-radius: var(--radius-md); border: 1px solid var(--border-light); margin-bottom: 20px;">
+            {% csrf_token %}
+            <div style="display: grid; grid-template-columns: 2.5fr 1fr 1fr 1fr auto; gap: 12px; align-items: flex-end;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Selecionar Matéria-Prima do Catálogo *</label>
+                    <select name="materia_prima_id" id="select-mp-ficha" class="form-control" onchange="atualizarInsumoFicha(this)" required>
+                        <option value="">-- Selecione uma Matéria-Prima --</option>
+                        {% for mp in materias_primas_disponiveis %}
+                        <option value="{{ mp.id }}" data-preco="{{ mp.preco_unitario|stringformat:'.4f' }}" data-unidade="{{ mp.unidade_medida }}" data-nome="{{ mp.nome }}">
+                            [{{ mp.codigo|default:'GERAL' }}] {{ mp.nome }} (R$ {{ mp.preco_unitario|floatformat:4 }}/{{ mp.unidade_medida }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Consumo p/ Peça *</label>
+                    <input type="number" step="0.0001" name="quantidade_consumo" id="input-qtd-ficha" placeholder="Ex: 0.0281" class="form-control" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Unidade *</label>
+                    <input type="text" name="unidade_medida" id="input-unidade-ficha" value="KG" class="form-control" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Custo Unit. (R$) *</label>
+                    <input type="number" step="0.0001" name="custo_unitario" id="input-custo-ficha" placeholder="0.0000" class="form-control" required>
+                </div>
+
+                <div>
+                    <button type="submit" class="btn-primary" style="height: 42px; padding: 0 18px; white-space: nowrap;">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        <span>Adicionar Insumo</span>
+                    </button>
+                </div>
+            </div>
+        </form>
+        <script>
+            function atualizarInsumoFicha(select) {
+                const opt = select.options[select.selectedIndex];
+                if (opt && opt.value) {
+                    const preco = opt.getAttribute('data-preco');
+                    const unidade = opt.getAttribute('data-unidade');
+                    if (preco) document.getElementById('input-custo-ficha').value = preco;
+                    if (unidade) document.getElementById('input-unidade-ficha').value = unidade;
+                }
+            }
+        </script>
+        {% endif %}
+
+        <!-- Tabela de Insumos da Ficha Técnica -->
+        <div class="table-responsive" style="border: 1px solid var(--border-light); border-radius: var(--radius-sm); overflow-x: auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Insumo / Matéria-Prima</th>
+                        <th>Consumo Unitário</th>
+                        <th>Unidade</th>
+                        <th>Custo Unitário</th>
+                        <th>Custo Total / Peça</th>
+                        {% if request.user.is_superuser %}<th style="text-align: right;">Ação</th>{% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in materias_primas %}
+                    <tr>
+                        <td>
+                            <strong style="color: var(--wine-700); font-size: 13.5px;">{{ item.materia_prima_nome }}</strong>
+                            {% if item.materia_prima %}
+                            <span style="font-size: 10.5px; background: #E8F6EE; color: #1E6E3C; padding: 1px 6px; border-radius: 4px; margin-left: 6px; font-weight: 600;">Catálogo</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <strong style="color: var(--text-primary);">{{ item.quantidade_consumo }}</strong>
+                        </td>
+                        <td>
+                            <span class="tag-pill">{{ item.unidade_medida }}</span>
+                        </td>
+                        <td>
+                            <span style="color: var(--text-secondary);">R$ {{ item.custo_unitario|floatformat:4 }}</span>
+                        </td>
+                        <td>
+                            <strong style="color: #1E6E3C; font-size: 14px;">R$ {{ item.custo_total|floatformat:4 }}</strong>
+                        </td>
+                        {% if request.user.is_superuser %}
+                        <td style="text-align: right; white-space: nowrap;">
+                            <a href="{% url 'excluir_insumo_produto' item.id %}" class="btn-acao btn-excluir" onclick="return confirm('Excluir este insumo da ficha técnica?');" title="Remover insumo">
+                                Excluir
+                            </a>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="empty-state" style="padding: 24px;">
+                            <p>Nenhuma matéria-prima cadastrada para este produto ainda. Preencha o formulário acima para calcular o custo unitário.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                {% if materias_primas %}
+                <tfoot>
+                    <tr style="background: #FAF5F0; font-weight: 700;">
+                        <td colspan="4" style="text-align: right; text-transform: uppercase; font-size: 12px; padding: 14px 20px; color: var(--wine-700);">
+                            Custo Total de Matéria-Prima por Peça Produzida:
+                        </td>
+                        <td style="font-size: 16px; color: #1E6E3C; padding: 14px 20px;">
+                            R$ {{ total_custo_materia_prima|floatformat:4 }}
+                        </td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+                {% endif %}
+            </table>
+        </div>
+    </div>
+
+    <!-- SEÇÃO 2: TABELA DE MEDIDAS & MODELAGEM -->
+    <div class="card" style="margin-bottom: 28px;">
+        <div class="card-header">
+            <div>
+                <h3>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.4 2.4 0 0 1 0-3.4l2.6-2.6a2.4 2.4 0 0 1 3.4 0Z"></path>
+                        <path d="m14.5 12.5 2-2"></path>
+                        <path d="m11.5 9.5 2-2"></path>
+                        <path d="m8.5 6.5 2-2"></path>
+                    </svg>
+                    Tabela de Medidas & Especificação da Modelagem
+                </h3>
+                <p style="font-size: 12.5px; color: var(--text-muted); margin-top: 4px;">
+                    Especifique as dimensões da peça em centímetros para cada tamanho da grade.
+                </p>
+            </div>
+        </div>
+
+        {% if request.user.is_superuser %}
+        <!-- Formulário para Adicionar Medida -->
+        <form action="{% url 'adicionar_medida_produto' produto.id %}" method="post" style="background: var(--bg-subtle); padding: 18px 20px; border-radius: var(--radius-md); border: 1px solid var(--border-light); margin-bottom: 20px;">
+            {% csrf_token %}
+            <div style="display: grid; grid-template-columns: 1fr 2fr 1fr 1fr auto; gap: 12px; align-items: flex-end;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Tamanho *</label>
+                    <input type="text" name="tamanho" placeholder="Ex: P, M, G, GG..." class="form-control" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Ponto / Parte da Peça *</label>
+                    <input type="text" name="parte_peca" placeholder="Ex: Busto, Cintura, Quadril, Comprimento..." class="form-control" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Medida (cm) *</label>
+                    <input type="number" step="0.01" name="medida_cm" placeholder="Ex: 72.50" class="form-control" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Tolerância</label>
+                    <input type="text" name="tolerancia" value="+/- 1.0 cm" placeholder="+/- 1.0 cm" class="form-control">
+                </div>
+
+                <div>
+                    <button type="submit" class="btn-primary" style="height: 42px; padding: 0 18px; white-space: nowrap;">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        <span>Adicionar Medida</span>
+                    </button>
+                </div>
+            </div>
+        </form>
+        {% endif %}
+
+        <!-- Tabela de Medidas Cadastradas -->
+        <div class="table-responsive" style="border: 1px solid var(--border-light); border-radius: var(--radius-sm); overflow-x: auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width: 120px;">Tamanho</th>
+                        <th>Parte / Ponto de Medição</th>
+                        <th>Medida Padrão</th>
+                        <th>Tolerância Permitida</th>
+                        {% if request.user.is_superuser %}<th style="text-align: right;">Ação</th>{% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in medidas %}
+                    <tr>
+                        <td>
+                            <span class="tag-pill" style="font-weight: 700; font-size: 12px; color: var(--wine-700);">{{ m.tamanho }}</span>
+                        </td>
+                        <td>
+                            <strong style="color: var(--text-primary); font-size: 13.5px;">{{ m.parte_peca }}</strong>
+                        </td>
+                        <td>
+                            <strong style="color: var(--wine-700); font-size: 14px;">{{ m.medida_cm }} cm</strong>
+                        </td>
+                        <td>
+                            <span style="color: var(--text-muted); font-size: 12px;">{{ m.tolerancia|default:"+/- 1.0 cm" }}</span>
+                        </td>
+                        {% if request.user.is_superuser %}
+                        <td style="text-align: right; white-space: nowrap;">
+                            <a href="{% url 'excluir_medida_produto' m.id %}" class="btn-acao btn-excluir" onclick="return confirm('Excluir esta medida da tabela?');">
+                                Excluir
+                            </a>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="empty-state" style="padding: 24px;">
+                            <p>Nenhuma medida registrada para este modelo. Adicione os pontos de medição no formulário acima.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- SEÇÃO 3: ENGENHARIA DE OPERAÇÕES & TEMPO PADRÃO (MANUAL DE MONTAGEM E CONFECÇÃO) -->
+    <div class="card" style="margin-bottom: 28px;">
+        <div class="card-header">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <h3>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                        Roteiro Operacional de Confecção & Tempo Padrão (Manual de Instruções)
+                    </h3>
+                    <p style="font-size: 12.5px; color: var(--text-muted); margin-top: 4px;">
+                        Sequência técnica das operações de costura por máquina, manuseio e tempo padrão de montagem.
+                    </p>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <a href="{% url 'operacoes_engenharia' %}?produto={{ produto.id }}" class="btn-secondary" style="padding: 7px 14px; font-size: 12px;">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 20h9"></path>
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                        </svg>
+                        <span>Gerenciar Operações no Painel TP</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        {% if distribuicao_maquinas %}
+        <!-- Balanceamento Rápido por Máquina -->
+        <div style="padding: 12px 18px; background: #FAF5F0; border-radius: 6px; margin-bottom: 16px; border: 1px solid var(--wine-200);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+                <span style="font-size: 12px; font-weight: 700; color: var(--wine-900);">Balanceamento das Máquinas da Peça:</span>
+                <span style="font-size: 11.5px; color: var(--text-muted);">
+                    Tempo Total: <strong>{{ tempo_padrao_total|floatformat:3 }} min</strong> | Ritmo: <strong>{{ pecas_por_hora }} peças/hora</strong>
+                </span>
+            </div>
+            <div style="display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: #ddd; margin-bottom: 8px;">
+                {% for item in distribuicao_maquinas %}
+                <div style="width: {{ item.percentual }}%; background: {% cycle '#6A1124' '#2B6CB0' '#1E6E3C' '#C07D18' '#805AD5' '#4A5568' %};" 
+                     title="{{ item.maquina }}: {{ item.tempo }} min ({{ item.percentual }}%)"></div>
+                {% endfor %}
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 14px;">
+                {% for item in distribuicao_maquinas %}
+                <div style="font-size: 11.5px;">
+                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: {% cycle '#6A1124' '#2B6CB0' '#1E6E3C' '#C07D18' '#805AD5' '#4A5568' %};"></span>
+                    <strong>{{ item.maquina }}</strong>: {{ item.tempo }}m ({{ item.percentual }}%)
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Tabela de Operações Técnicas -->
+        <style>
+            .tabela-engenharia-wrapper {
+                border: 1px solid var(--border-light);
+                border-radius: var(--radius-sm);
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                background: white;
+            }
+            .tabela-engenharia {
+                width: 100%;
+                min-width: 950px;
+                border-collapse: collapse;
+            }
+            .tabela-engenharia th {
+                padding: 10px 10px;
+                font-size: 11px;
+                white-space: nowrap;
+                background: #FAF5F0;
+                color: var(--wine-800);
+                border-bottom: 2px solid var(--wine-200);
+                font-weight: 700;
+            }
+            .tabela-engenharia td {
+                padding: 10px 10px;
+                font-size: 12.5px;
+                border-bottom: 1px solid var(--border-subtle);
+                vertical-align: middle;
+            }
+            .tabela-engenharia tbody tr:hover {
+                background-color: #FAF6F2;
+            }
+        </style>
+
+        <div class="tabela-engenharia-wrapper">
+            <table class="tabela-engenharia">
+                <thead>
+                    <tr>
+                        <th style="width: 38px; text-align: center;">Seq</th>
+                        <th style="min-width: 200px;">Operação / Descrição</th>
+                        <th style="width: 85px;">Máquina</th>
+                        <th style="width: 105px;">Condição</th>
+                        <th style="width: 95px; text-align: center;">Manuseio</th>
+                        <th style="width: 85px; text-align: right;">Costura</th>
+                        <th style="width: 95px; text-align: right;">TP Padrão</th>
+                        <th style="width: 85px; text-align: right;">c/ Pcte</th>
+                        <th style="min-width: 160px;">Instrução / Observações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for op in operacoes %}
+                    <tr>
+                        <td style="text-align: center; font-weight: 700; color: var(--wine-700);">
+                            {{ op.ordem }}
+                        </td>
+                        <td>
+                            <strong style="color: var(--text-primary); font-size: 13px; line-height: 1.35; display: block;">{{ op.titulo }}</strong>
+                            {% if op.parte_peca %}
+                            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Parte: {{ op.parte_peca }}</div>
+                            {% endif %}
+                            {% if op.aparelho %}
+                            <div style="font-size: 11px; color: var(--wine-600); margin-top: 2px;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;"><polygon points="12 2 2 7 12 12 22 7 12 2"/></svg> {{ op.aparelho }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="tag-pill" style="font-weight: 700; background: #FAF5F0; color: var(--wine-700); padding: 3px 8px; font-size: 11.5px;">
+                                {{ op.maquina_codigo }}
+                            </span>
+                            <div style="font-size: 10.5px; color: var(--text-secondary); margin-top: 2px;">{{ op.maquina_nome|default:"" }}</div>
+                        </td>
+                        <td>
+                            {% if op.condicao == 'com_elastico' %}
+                            <span class="badge badge-warning" style="font-size: 10px; padding: 2px 7px;">c/ Elástico (+5%)</span>
+                            {% elif op.condicao == 'com_vies' %}
+                            <span class="badge badge-info" style="font-size: 10px; padding: 2px 7px; background: rgba(43,108,176,0.1); color: #2B6CB0;">c/ Viés (+5%)</span>
+                            {% elif op.condicao == 'com_2vies' %}
+                            <span class="badge badge-info" style="font-size: 10px; padding: 2px 7px; background: rgba(128,90,213,0.1); color: #805AD5;">c/ 2 Viés (+10%)</span>
+                            {% else %}
+                            <span style="font-size: 11px; color: var(--text-muted);">s/ Aviamento</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            <strong>{{ op.qtde_manuseio }}x</strong> 
+                            <span class="tag-pill" style="font-size: 10.5px; padding: 2px 5px;">{{ op.dificuldade }}</span>
+                            <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 1px;">{{ op.tempo_manuseio|floatformat:3 }}m</div>
+                        </td>
+                        <td style="text-align: right;">
+                            <strong>{{ op.comprimento_costura_cm|floatformat:0 }}</strong> <span style="font-size: 10.5px; color: var(--text-muted);">cm</span>
+                            <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 1px;">{{ op.tempo_costura|floatformat:3 }}m</div>
+                        </td>
+                        <td style="text-align: right;">
+                            <strong style="color: var(--wine-800); font-size: 13.5px;">{{ op.tempo_padrao|floatformat:3 }}</strong> <span style="font-size: 10.5px; color: var(--text-muted);">min</span>
+                        </td>
+                        <td style="text-align: right;">
+                            <span style="font-weight: 600; color: var(--text-primary); font-size: 12.5px;">{{ op.tempo_padrao_pcte|floatformat:3 }}</span>
+                        </td>
+                        <td>
+                            <span style="font-size: 11.5px; color: {% if op.observacoes %}var(--wine-700){% else %}#aaa{% endif %}; line-height: 1.3; display: block;">
+                                {{ op.observacoes|default:"—" }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="empty-state" style="padding: 24px;">
+                            <p style="color: var(--text-muted);">Nenhuma operação técnica cadastrada para este modelo ainda. Acesse o <a href="{% url 'operacoes_engenharia' %}?produto={{ produto.id }}" style="color: var(--wine-700); font-weight: 600;">Painel de Engenharia & Tempo Padrão</a> para cadastrar o roteiro de montagem.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                {% if operacoes %}
+                <tfoot>
+                    <tr style="background: #FAF5F0; font-weight: 700;">
+                        <td colspan="6" style="text-align: right; text-transform: uppercase; font-size: 11.5px; padding: 12px 14px; color: var(--wine-800);">
+                            Tempo Padrão Total de Costura / Peça:
+                        </td>
+                        <td style="text-align: right; font-size: 15px; color: var(--wine-900); padding: 12px 14px;">
+                            {{ tempo_padrao_total|floatformat:3 }} min
+                        </td>
+                        <td style="text-align: right; font-size: 13.5px; color: var(--text-primary); padding: 12px 14px;">
+                            {{ tempo_padrao_pcte_total|floatformat:3 }} min
+                        </td>
+                        <td style="font-size: 11.5px; color: #1E6E3C; padding: 12px 14px;">
+                            Capacidade: <strong>{{ pecas_por_hora }} pçs/h</strong> (~{{ pecas_por_dia }} pçs/dia)
+                        </td>
+                    </tr>
+                </tfoot>
+                {% endif %}
+            </table>
+        </div>
+    </div>
+
+    <!-- SEÇÃO 4: COMPOSIÇÃO TÊXTIL & FICHA TÉCNICA OPERACIONAL -->
+    <div class="card">
+        <div class="card-header">
+            <h3>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+                Composição Têxtil & Ficha Técnica Operacional
+            </h3>
+        </div>
+
+        <form action="{% url 'atualizar_ficha_produto' produto.id %}" method="post" style="display: flex; flex-direction: column; gap: 16px;">
+            {% csrf_token %}
+            
+            <div class="form-group" style="margin-bottom: 0;">
+                <label>Composição Têxtil do Produto (Etiqueta & Especificação)</label>
+                <input type="text" name="composicao" value="{{ produto.composicao|default:'' }}" placeholder="Ex: Tecido principal: 90% Poliamida, 10% Elastano. Forro: 100% Algodão." class="form-control" {% if not request.user.is_superuser %}readonly style="background: var(--bg-subtle);"{% endif %}>
+                <small style="color: var(--text-muted); font-size: 11.5px; margin-top: 3px;">
+                    Informação oficial de composição para etiquetagem e controle de qualidade.
+                </small>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label>Ficha Técnica / Instruções de Confecção e Montagem</label>
+                <textarea name="ficha_tecnica" rows="4" placeholder="Ex: Fechamento das laterais na overlock 3 fios, aplicação de elástico bico de pato com tensão moderada, acabamento da alça com travete de reforço, agulha fina 9/65 ponta bola..." class="form-control" {% if not request.user.is_superuser %}readonly style="background: var(--bg-subtle);"{% endif %}>{{ produto.ficha_tecnica|default:'' }}</textarea>
+                <small style="color: var(--text-muted); font-size: 11.5px; margin-top: 3px;">
+                    Orientações para o cortador, costureiras internas e oficinas de facção externas.
+                </small>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label>Observações Gerais de Modelagem & Encolhimento</label>
+                <textarea name="observacoes_medidas" rows="2" placeholder="Observações adicionais de prova, corte no fio do tecido, elasticidade..." class="form-control" {% if not request.user.is_superuser %}readonly style="background: var(--bg-subtle);"{% endif %}>{{ produto.observacoes_medidas|default:'' }}</textarea>
+            </div>
+
+            {% if request.user.is_superuser %}
+            <div style="text-align: right; border-top: 1px solid var(--border-light); padding-top: 14px;">
+                <button type="submit" class="btn-primary" style="padding: 10px 24px;">
+                    Salvar Ficha Técnica & Composição
+                </button>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+
+</div>
+{% endblock %}

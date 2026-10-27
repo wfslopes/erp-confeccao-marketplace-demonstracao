@@ -1,0 +1,177 @@
+{% extends 'fabrica/base.html' %}
+{% load static %}
+
+{% block title %}Gestão de Usuários & Acessos - Disfarce{% endblock %}
+{% block breadcrumb %}Usuários & Acessos{% endblock %}
+{% block page_title %}Controle de Usuários e Permissões de Acesso{% endblock %}
+
+{% block content %}
+<div class="container">
+    
+    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
+        
+        <!-- Formulário de Criação de Usuário -->
+        <div class="card" style="margin-bottom: 0;">
+            <div class="card-header">
+                <h3>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <line x1="19" x2="19" y1="8" y2="14"/>
+                        <line x1="22" x2="16" y1="11" y2="11"/>
+                    </svg>
+                    <span>Novo Usuário</span>
+                </h3>
+            </div>
+            
+            <form method="post" style="display: flex; flex-direction: column; gap: 14px;">
+                {% csrf_token %}
+                <input type="hidden" name="acao" value="criar">
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Nome de Usuário (Login) *</label>
+                    <input type="text" name="username" placeholder="Ex: funcionario1" class="form-control" required autocomplete="off">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Senha de Acesso *</label>
+                    <input type="password" name="password" placeholder="Digite uma senha" class="form-control" required autocomplete="new-password">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Nível de Permissão *</label>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <label style="display: flex; align-items: flex-start; gap: 10px; padding: 12px; background: #FAF5F0; border: 1.5px solid var(--wine-600); border-radius: var(--radius-sm); cursor: pointer;">
+                            <input type="radio" name="tipo_usuario" value="funcionario" checked style="accent-color: var(--wine-600); margin-top: 3px;">
+                            <div>
+                                <strong style="font-size: 13px; color: var(--wine-800); display: block;">Funcionário (Apenas Visualização)</strong>
+                                <small style="color: var(--text-muted); font-size: 11.5px; line-height: 1.3;">Pode navegar pelo sistema, consultar lotes, estoques e relatórios, mas não pode alterar nem excluir nada.</small>
+                            </div>
+                        </label>
+                        <label style="display: flex; align-items: flex-start; gap: 10px; padding: 12px; background: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: var(--radius-sm); cursor: pointer;">
+                            <input type="radio" name="tipo_usuario" value="admin" style="accent-color: var(--wine-600); margin-top: 3px;">
+                            <div>
+                                <strong style="font-size: 13px; color: var(--text-primary); display: block;">Administrador (Acesso Total)</strong>
+                                <small style="color: var(--text-muted); font-size: 11.5px; line-height: 1.3;">Permissão irrestrita para cadastrar, editar, excluir, finalizar lotes e gerenciar acessos.</small>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary" style="margin-top: 6px; width: 100%;">Criar Conta de Acesso</button>
+            </form>
+        </div>
+
+        <!-- Tabela de Usuários Cadastrados -->
+        <div class="table-container" style="margin-bottom: 0;">
+            <div class="table-header-box">
+                <div>
+                    <h3>Usuários do Sistema</h3>
+                    <span class="table-count-badge">{{ usuarios|length }} contas ativas/inativas</span>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="min-width: 150px;">Usuário</th>
+                            <th style="min-width: 140px;">Nível de Acesso</th>
+                            <th style="min-width: 100px;">Status</th>
+                            <th style="min-width: 130px;">Último Acesso</th>
+                            <th style="text-align: right; min-width: 160px;">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in usuarios %}
+                        <tr>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <div style="width: 32px; height: 32px; border-radius: 50%; background: {% if u.is_superuser %}var(--wine-600){% else %}#1967D2{% endif %}; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px;">
+                                        {{ u.username|make_list|first|upper }}
+                                    </div>
+                                    <div>
+                                        <strong style="color: var(--wine-800); font-size: 13.5px;">{{ u.username }}</strong>
+                                        {% if u == request.user %}
+                                            <span style="font-size: 11px; color: var(--text-muted); display: block;">(Você)</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if u.is_superuser %}
+                                    <span class="badge badge-wine" style="font-size: 11px;">Administrador</span>
+                                {% else %}
+                                    <span class="badge badge-info" style="font-size: 11px; background: #E8F0FE; color: #1967D2; border-color: #C2E7FF;">Funcionário (Visualização)</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if u.is_active %}
+                                    <span class="badge badge-success" style="font-size: 10.5px;">Ativo</span>
+                                {% else %}
+                                    <span class="badge badge-danger" style="font-size: 10.5px;">Inativo</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div style="font-size: 12px; color: var(--text-secondary);">
+                                    {{ u.last_login|date:"d/m/Y H:i"|default:"Nunca acessou" }}
+                                </div>
+                            </td>
+                            <td style="text-align: right; white-space: nowrap;">
+                                <!-- Botão de redefinir senha rápida -->
+                                <button type="button" class="btn-acao btn-editar" onclick="redefinirSenha({{ u.id }}, '{{ u.username }}')" title="Alterar Senha" style="padding: 6px 10px; font-size: 11.5px;">
+                                    Senha
+                                </button>
+
+                                {% if u != request.user %}
+                                    <form method="post" style="display: inline;" onsubmit="return confirm('Deseja {% if u.is_active %}desativar{% else %}ativar{% endif %} o usuário {{ u.username }}?');">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="acao" value="toggle_status">
+                                        <input type="hidden" name="user_id" value="{{ u.id }}">
+                                        <button type="submit" class="btn-acao" style="padding: 6px 10px; font-size: 11.5px; background: var(--bg-subtle); border: 1px solid var(--border-medium); color: var(--text-secondary);">
+                                            {% if u.is_active %}Desativar{% else %}Ativar{% endif %}
+                                        </button>
+                                    </form>
+
+                                    <form method="post" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja EXCLUIR o usuário {{ u.username }}?');">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="acao" value="excluir">
+                                        <input type="hidden" name="user_id" value="{{ u.id }}">
+                                        <button type="submit" class="btn-acao btn-excluir" style="padding: 6px 10px; font-size: 11.5px;">
+                                            Excluir
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Formulário Oculto para Alteração de Senha -->
+<form id="form-alterar-senha" method="post" style="display: none;">
+    {% csrf_token %}
+    <input type="hidden" name="acao" value="alterar_senha">
+    <input type="hidden" name="user_id" id="senha-user-id">
+    <input type="hidden" name="nova_senha" id="senha-nova-valor">
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function redefinirSenha(userId, username) {
+        const nova = prompt(`Digite a nova senha para o usuário "${username}":`);
+        if (nova && nova.trim().length > 0) {
+            document.getElementById('senha-user-id').value = userId;
+            document.getElementById('senha-nova-valor').value = nova.trim();
+            document.getElementById('form-alterar-senha').submit();
+        }
+    }
+</script>
+{% endblock %}

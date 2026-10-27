@@ -1,0 +1,283 @@
+{% extends 'fabrica/base.html' %}
+{% load static %}
+
+{% block title %}Módulo Financeiro - Disfarce{% endblock %}
+{% block breadcrumb %}Financeiro & Custos{% endblock %}
+{% block page_title %}Módulo Financeiro (Custos de Corte, Confecção & Acertos){% endblock %}
+
+{% block content %}
+<div class="container">
+    
+    <!-- Cards de Resumo Financeiro -->
+    <div class="dashboard-grid">
+        <div class="stat-card">
+            <div class="stat-card-header">
+                <h4>Custo Total de Corte</h4>
+                <div class="stat-card-icon amber">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="6" cy="6" r="3"/>
+                        <path d="M8.12 8.12 12 12"/>
+                        <path d="M20 4 8.12 15.88"/>
+                        <circle cx="6" cy="18" r="3"/>
+                        <path d="M14.8 14.8 20 20"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="value">R$ {{ total_corte|floatformat:2 }}</div>
+            <div class="stat-desc">
+                <span class="tag-pill">Acumulado Cortes</span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-card-header">
+                <h4>Custo Total de Costura</h4>
+                <div class="stat-card-icon blue">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                        <polyline points="2 17 12 22 22 17"/>
+                        <polyline points="2 12 12 17 22 12"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="value">R$ {{ total_costura|floatformat:2 }}</div>
+            <div class="stat-desc">
+                <span class="tag-pill">Facções e Costura</span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-card-header">
+                <h4>Total Quitado</h4>
+                <div class="stat-card-icon green">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="value" style="color: #1E6E3C;">R$ {{ total_pago|floatformat:2 }}</div>
+            <div class="stat-desc">
+                <span class="badge badge-success" style="font-size: 10px;">Pagos</span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-card-header">
+                <h4>Saldo a Pagar</h4>
+                <div class="stat-card-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" x2="12" y1="8" y2="12"/>
+                        <line x1="12" x2="12.01" y1="16" y2="16"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="value" style="color: var(--wine-600);">R$ {{ total_pendente|floatformat:2 }}</div>
+            <div class="stat-desc">
+                <span class="badge badge-warning" style="font-size: 10px;">Pendente</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. Acertos com Cortadores Freelancers -->
+    <div class="table-container">
+        <div class="table-header-box">
+            <h3>1. Acertos Financeiros com Cortadores Freelancers</h3>
+            <span class="table-count-badge">{{ lotes_corte|length }} cortes</span>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Lote / Referência</th>
+                        <th>Cortador</th>
+                        <th>Peças Cortadas</th>
+                        <th>Vlr Unitário (R$)</th>
+                        <th>Custo Total</th>
+                        <th>Status do Pagamento & Data</th>
+                        {% if request.user.is_superuser %}
+                        <th style="text-align: right;">Ação</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for corte in lotes_corte %}
+                    <tr>
+                        <td>
+                            <strong style="color: var(--wine-700); font-size: 13.5px;">{{ corte.codigo_lote }}</strong>
+                            <div><span class="tag-pill">{{ corte.produto.sku }}</span></div>
+                        </td>
+                        <td>
+                            <span style="font-weight: 600; color: var(--text-primary);">{{ corte.cortador|default:"Não informado" }}</span>
+                        </td>
+                        <td>
+                            <span style="font-weight: 600;">{{ corte.quantidade_total_pecas }}</span> <small style="color: var(--text-muted);">pçs</small>
+                        </td>
+                        
+                        {% if request.user.is_superuser %}
+                        <!-- Inputs com HTML5 Form Association -->
+                        <form id="form-corte-{{ corte.id }}" method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="tipo" value="corte">
+                            <input type="hidden" name="registro_id" value="{{ corte.id }}">
+                        </form>
+
+                        <td>
+                            <input form="form-corte-{{ corte.id }}" type="number" step="0.01" name="valor_unitario_corte" value="{{ corte.valor_unitario_corte|stringformat:'.2f' }}" class="form-control" style="width: 95px; padding: 6px 10px; font-size: 12.5px;">
+                        </td>
+                        {% else %}
+                        <td>
+                            <span style="font-size: 13px; font-weight: 600; color: var(--text-primary);">R$ {{ corte.valor_unitario_corte|floatformat:2 }}</span>
+                        </td>
+                        {% endif %}
+
+                        <td>
+                            <strong style="color: var(--wine-700); font-size: 14px;">R$ {{ corte.custo_total_corte|floatformat:2 }}</strong>
+                        </td>
+
+                        <td>
+                            {% if request.user.is_superuser %}
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
+                                    <input form="form-corte-{{ corte.id }}" type="checkbox" name="pago_cortador" {% if corte.pago_cortador %}checked{% endif %} style="accent-color: var(--wine-600); width: 16px; height: 16px;">
+                                    <span>{% if corte.pago_cortador %}<span style="color: #1E6E3C;">Pago</span>{% else %}<span style="color: var(--text-muted);">Pendente</span>{% endif %}</span>
+                                </label>
+                                <input form="form-corte-{{ corte.id }}" type="date" name="data_pagamento_cortador" value="{{ corte.data_pagamento_cortador|date:'Y-m-d' }}" class="form-control" style="font-size: 12px; padding: 5px 8px; width: 135px;" title="Data do Pagamento">
+                            </div>
+                            {% else %}
+                            <div>
+                                {% if corte.pago_cortador %}
+                                    <span class="badge badge-success">Pago</span>
+                                    {% if corte.data_pagamento_cortador %}
+                                        <small style="color: var(--text-muted); margin-left: 6px;">{{ corte.data_pagamento_cortador|date:'d/m/Y' }}</small>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge badge-wine">Pendente</span>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </td>
+
+                        {% if request.user.is_superuser %}
+                        <td style="text-align: right; white-space: nowrap;">
+                            <button form="form-corte-{{ corte.id }}" type="submit" class="btn-primary" style="padding: 6px 14px; font-size: 12px;">Salvar</button>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="{% if request.user.is_superuser %}7{% else %}6{% endif %}" class="empty-state">
+                            <p>Nenhum lote de corte registrado.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 2. Acertos com Faccionistas / Produção -->
+    <div class="table-container">
+        <div class="table-header-box">
+            <h3>2. Acertos de Costura (Faccionistas Externas & Produção Interna)</h3>
+            <span class="table-count-badge">{{ lotes_producao|length }} sub-lotes</span>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Sub-lote / Origem</th>
+                        <th>Responsável / Etapa</th>
+                        <th>Qtd Real Costurada</th>
+                        <th>Vlr Unitário (R$)</th>
+                        <th>Custo Total</th>
+                        <th>Status do Pagamento & Data</th>
+                        {% if request.user.is_superuser %}
+                        <th style="text-align: right;">Ação</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sub in lotes_producao %}
+                    <tr>
+                        <td>
+                            <strong style="color: var(--wine-700); font-size: 13.5px;">{{ sub.codigo_sub_lote }}</strong>
+                            <div><small style="color: var(--text-muted);">Corte: {{ sub.lote_corte.codigo_lote }}</small></div>
+                        </td>
+                        <td>
+                            {% if sub.faccionista %}
+                                <div style="font-weight: 600; color: var(--wine-700);">{{ sub.faccionista.nome }}</div>
+                                <span class="tag-pill" style="font-size: 10px;">{{ sub.processo_faccionista|default:"Costura" }}</span>
+                            {% else %}
+                                <span class="badge badge-wine" style="font-size: 10.5px;">Costura Interna</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <strong style="color: var(--text-primary);">{{ sub.quantidade_real_costurada }}</strong> <small style="color: var(--text-muted);">pçs</small>
+                        </td>
+
+                        {% if request.user.is_superuser %}
+                        <form id="form-prod-{{ sub.id }}" method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="tipo" value="producao">
+                            <input type="hidden" name="registro_id" value="{{ sub.id }}">
+                        </form>
+
+                        <td>
+                            <input form="form-prod-{{ sub.id }}" type="number" step="0.01" name="valor_unitario_costura" value="{{ sub.valor_unitario_costura|stringformat:'.2f' }}" class="form-control" style="width: 95px; padding: 6px 10px; font-size: 12.5px;">
+                        </td>
+                        {% else %}
+                        <td>
+                            <span style="font-size: 13px; font-weight: 600; color: var(--text-primary);">R$ {{ sub.valor_unitario_costura|floatformat:2 }}</span>
+                        </td>
+                        {% endif %}
+
+                        <td>
+                            <strong style="color: var(--wine-700); font-size: 14px;">R$ {{ sub.custo_total_costura|floatformat:2 }}</strong>
+                        </td>
+
+                        <td>
+                            {% if request.user.is_superuser %}
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
+                                    <input form="form-prod-{{ sub.id }}" type="checkbox" name="pago_costura" {% if sub.pago_costura %}checked{% endif %} style="accent-color: var(--wine-600); width: 16px; height: 16px;">
+                                    <span>{% if sub.pago_costura %}<span style="color: #1E6E3C;">Pago</span>{% else %}<span style="color: var(--text-muted);">Pendente</span>{% endif %}</span>
+                                </label>
+                                <input form="form-prod-{{ sub.id }}" type="date" name="data_pagamento_costura" value="{{ sub.data_pagamento_costura|date:'Y-m-d' }}" class="form-control" style="font-size: 12px; padding: 5px 8px; width: 135px;" title="Data do Pagamento">
+                            </div>
+                            {% else %}
+                            <div>
+                                {% if sub.pago_costura %}
+                                    <span class="badge badge-success">Pago</span>
+                                    {% if sub.data_pagamento_costura %}
+                                        <small style="color: var(--text-muted); margin-left: 6px;">{{ sub.data_pagamento_costura|date:'d/m/Y' }}</small>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge badge-wine">Pendente</span>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </td>
+
+                        {% if request.user.is_superuser %}
+                        <td style="text-align: right; white-space: nowrap;">
+                            <button form="form-prod-{{ sub.id }}" type="submit" class="btn-primary" style="padding: 6px 14px; font-size: 12px;">Salvar</button>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="{% if request.user.is_superuser %}7{% else %}6{% endif %}" class="empty-state">
+                            <p>Nenhum sub-lote de produção registrado.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

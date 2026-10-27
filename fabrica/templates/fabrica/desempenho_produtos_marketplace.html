@@ -1,0 +1,556 @@
+{% extends 'fabrica/base.html' %}
+{% load static %}
+
+{% block title %}Desempenho dos Produtos & Estratégia - Disfarce Confecção{% endblock %}
+{% block breadcrumb %}Marketplace / Desempenho & Lucratividade dos Produtos{% endblock %}
+{% block page_title %}Desempenho dos Produtos: Lucrativos, Ponto de Equilíbrio & Prejuízo{% endblock %}
+
+{% block extra_head %}
+<!-- Chart.js para gráfico de lucratividade -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .canal-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 8px;
+        border-radius: var(--radius-full, 9999px);
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        white-space: nowrap !important;
+        flex-shrink: 0 !important;
+        line-height: 1.2;
+    }
+    .canal-badge.shopee {
+        background-color: #FEF0EC;
+        color: #D33916;
+        border: 1px solid #FCD2C7;
+    }
+    .canal-badge.mercadolivre {
+        background-color: #EEF4FD;
+        color: #1754B5;
+        border: 1px solid #C8DCFA;
+    }
+    .canal-badge.tiktok {
+        background-color: #F0EEEE;
+        color: #1F191A;
+        border: 1px solid #D8D4D5;
+    }
+    .canal-badge.todos {
+        background-color: #F2EEF5;
+        color: #5B2B7D;
+        border: 1px solid #D9CCE6;
+    }
+
+    .subnav-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 22px;
+        border-bottom: 1px solid var(--border-light);
+        padding-bottom: 12px;
+        flex-wrap: wrap;
+    }
+    .subnav-tab {
+        padding: 8px 18px;
+        font-size: 13.5px;
+        font-weight: 600;
+        border-radius: var(--radius-md, 8px);
+        text-decoration: none;
+        color: var(--text-secondary);
+        background: var(--bg-surface);
+        border: 1px solid var(--border-light);
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .subnav-tab:hover {
+        background: var(--bg-subtle);
+        color: var(--text-primary);
+    }
+    .subnav-tab.active {
+        background: var(--wine-700, #6F2E34);
+        color: #FFFFFF !important;
+        font-weight: 700;
+        border-color: var(--wine-700, #6F2E34);
+    }
+
+    .status-badge-custom {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: var(--radius-full);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+    }
+    .status-badge-custom.lucrativo {
+        background: #EDF7EE;
+        color: #1E6E3C;
+        border: 1px solid #C8E6C9;
+    }
+    .status-badge-custom.equilibrio {
+        background: #FEF8E7;
+        color: #B26A1B;
+        border: 1px solid #FFE082;
+    }
+    .status-badge-custom.prejuizo {
+        background: #FCE8E6;
+        color: #A32832;
+        border: 1px solid #F5C6CB;
+    }
+    .status-badge-custom.sem_vendas {
+        background: #F0F2F5;
+        color: #6C757D;
+        border: 1px solid #DEE2E6;
+    }
+
+    /* Tabela compacta e sem quebra */
+    .desempenho-table {
+        width: 100%;
+        min-width: 1220px;
+        border-collapse: separate;
+        border-spacing: 0;
+        text-align: left;
+        font-size: 12.5px;
+    }
+    .desempenho-table th {
+        background-color: #FAF5F0;
+        color: var(--wine-700);
+        padding: 10px 8px;
+        font-weight: 700;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        border-bottom: 1px solid var(--border-light);
+        white-space: nowrap;
+    }
+    .desempenho-table td {
+        padding: 10px 8px;
+        border-bottom: 1px solid var(--border-subtle);
+        color: var(--text-primary);
+        vertical-align: middle;
+    }
+    .desempenho-table tbody tr {
+        transition: background-color 0.12s ease;
+    }
+    .desempenho-table tbody tr:hover {
+        background-color: #FAF6F2;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid" style="padding: 20px 24px 60px; max-width: 1650px; margin: 0 auto;">
+
+    <!-- SUBNAV TABS -->
+    <div class="subnav-tabs">
+        <a href="{% url 'marketplace_dashboard' %}" class="subnav-tab">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="18" height="18" x="3" y="3" rx="2"/>
+                <path d="M3 9h18"/>
+                <path d="M9 21V9"/>
+            </svg>
+            Painel & Extrato de Vendas
+        </a>
+        <a href="{% url 'desempenho_produtos_marketplace' %}" class="subnav-tab active">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="20" x2="18" y2="10"/>
+                <line x1="12" y1="20" x2="12" y2="4"/>
+                <line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+            Desempenho dos Produtos (Marketplace)
+        </a>
+        <a href="{% url 'desempenho_fabrica_marketplace' %}" class="subnav-tab">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/>
+            </svg>
+            Desempenho da Fábrica & Lucro Integrado
+        </a>
+        <a href="{% url 'produtos_marketplace' %}" class="subnav-tab">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
+                <path d="M3 6h18"/>
+                <path d="M16 10a4 4 0 0 1-8 0"/>
+            </svg>
+            Produtos do Marketplace & Custos por Data
+        </a>
+    </div>
+
+    <!-- BANNER DE ORIENTAÇÃO ESTRATÉGICA -->
+    <div style="background: linear-gradient(135deg, #FAF6F2 0%, #F5EFEB 100%); border: 1px solid var(--border-light); border-radius: var(--radius-lg, 12px); padding: 20px 24px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;">
+        <div>
+            <h2 style="font-size: 18px; font-weight: 700; color: var(--wine-800); margin: 0 0 6px 0;">
+                Diagnóstico de Lucratividade & Decisões Estratégicas
+            </h2>
+            <p style="font-size: 13px; color: var(--text-secondary); margin: 0; max-width: 820px; line-height: 1.5;">
+                Esta visão analisa o resultado real de cada produto após abater <strong>Custo de Matéria-Prima (CPV)</strong>, <strong>Comissão da Shopee (14% + R$ 4,50)</strong>, taxas de serviço e <strong>investimento em Ads</strong>.
+                Identifique instantaneamente os produtos que financiam seu negócio e os que estão sangrando caixa.
+            </p>
+        </div>
+        <div>
+            <a href="{% url 'produtos_marketplace' %}" class="btn-primary" style="font-size: 12.5px; padding: 8px 16px; display: inline-flex; align-items: center; gap: 6px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 20h9"/>
+                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+                </svg>
+                <span>Ajustar Custos / Tiers</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- 1. CARDS DE DIAGNÓSTICO (KPIS ESTRATÉGICOS) -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 24px;">
+        
+        <!-- CARD 1: LUCRATIVOS -->
+        <div class="stat-card" style="border-top: 4px solid #1E6E3C;">
+            <div class="stat-card-header">
+                <h4>🟢 Produtos Lucrativos</h4>
+                <span class="badge badge-success" style="font-size: 11px;">Escalar</span>
+            </div>
+            <div class="value" style="color: #1E6E3C;">
+                {{ total_lucrativos }} <span style="font-size: 15px; font-weight: 600; color: var(--text-secondary);">produtos</span>
+            </div>
+            <div class="stat-desc" style="margin-top: 6px;">
+                Lucro Total Gerado: <strong style="color: #1E6E3C;">+ R$ {{ lucro_lucrativos|floatformat:2 }}</strong>
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Produtos com margem saudável acima de 5%</div>
+            </div>
+        </div>
+
+        <!-- CARD 2: PONTO DE EQUILÍBRIO (SEM LUCRO) -->
+        <div class="stat-card" style="border-top: 4px solid #D9822B;">
+            <div class="stat-card-header">
+                <h4>🟡 Ponto de Equilíbrio / Atenção</h4>
+                <span class="badge badge-warning" style="font-size: 11px;">Ajustar Preço</span>
+            </div>
+            <div class="value" style="color: #B26A1B;">
+                {{ total_equilibrio }} <span style="font-size: 15px; font-weight: 600; color: var(--text-secondary);">produtos</span>
+            </div>
+            <div class="stat-desc" style="margin-top: 6px;">
+                Faturamento Girando: <strong>R$ {{ gmv_equilibrio|floatformat:2 }}</strong>
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Vendem muito, mas margem fica entre 0% e 5%</div>
+            </div>
+        </div>
+
+        <!-- CARD 3: PREJUÍZO / NEGATIVOS -->
+        <div class="stat-card" style="border-top: 4px solid #A32832;">
+            <div class="stat-card-header">
+                <h4>🔴 Produtos em Prejuízo</h4>
+                <span class="badge badge-danger" style="font-size: 11px;">Ação Imediata</span>
+            </div>
+            <div class="value" style="color: #A32832;">
+                {{ total_prejuizo }} <span style="font-size: 15px; font-weight: 600; color: var(--text-secondary);">produtos</span>
+            </div>
+            <div class="stat-desc" style="margin-top: 6px;">
+                Prejuízo Acumulado: <strong style="color: #A32832;">- R$ {{ prejuizo_acumulado|floatformat:2 }}</strong>
+                {% if total_cancelados_ads_prejuizo > 0 %}
+                <div style="font-size: 11px; color: #A32832; font-weight: 600; margin-top: 2px;">
+                    ⚠️ R$ {{ total_cancelados_ads_prejuizo|floatformat:2 }} CAC perdido em cancelamentos
+                </div>
+                {% else %}
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Preço praticado não cobre taxas + custo fábrica</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- CARD 4: RESULTADO CONSOLIDADO -->
+        <div class="stat-card" style="border-top: 4px solid var(--wine-700);">
+            <div class="stat-card-header">
+                <h4>Resultado Geral</h4>
+                <span class="tag-pill">{{ taxa_lucratividade|floatformat:0 }}% do portfólio no azul</span>
+            </div>
+            <div class="value" style="color: {% if lucro_geral > 0 %}#1E6E3C{% else %}#A32832{% endif %};">
+                R$ {{ lucro_geral|floatformat:2 }}
+            </div>
+            <div class="stat-desc" style="margin-top: 6px;">
+                GMV: <strong>R$ {{ gmv_geral|floatformat:2 }}</strong> (Margem Média: <strong>{{ margem_media_geral|floatformat:1 }}%</strong>)
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Total de {{ vendas_geral }} vendas analisadas</div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 2. GRÁFICO DE LUCRO LÍQUIDO POR PRODUTO -->
+    <div class="card" style="padding: 20px 24px; margin-bottom: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+            <div>
+                <h3 style="font-size: 15px; font-weight: 700; color: var(--text-primary); margin: 0;">
+                    Mapa de Lucro Líquido Real por Produto (R$)
+                </h3>
+                <span style="font-size: 12px; color: var(--text-muted);">
+                    Barras verdes indicam lucro positivo gerado; barras vermelhas indicam prejuízo acumulado.
+                </span>
+            </div>
+            <div style="display: flex; gap: 14px; font-size: 12px; font-weight: 600;">
+                <span style="display: inline-flex; align-items: center; gap: 5px;">
+                    <span style="width: 12px; height: 12px; background: #1E6E3C; border-radius: 2px; display: inline-block;"></span>
+                    Lucro Positivo
+                </span>
+                <span style="display: inline-flex; align-items: center; gap: 5px;">
+                    <span style="width: 12px; height: 12px; background: #A32832; border-radius: 2px; display: inline-block;"></span>
+                    Prejuízo / Negativo
+                </span>
+            </div>
+        </div>
+
+        <div style="height: 280px; width: 100%;">
+            <canvas id="chartLucroProdutos"></canvas>
+        </div>
+    </div>
+
+    <!-- 3. BARRA DE FILTROS ESTRATÉGICOS -->
+    <div class="card" style="padding: 16px 20px; margin-bottom: 24px;">
+        <form method="get" style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
+            
+            <!-- Filtro de Classificação / Status -->
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <label style="font-size: 12px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Status:</label>
+                <select name="status" class="form-control" style="width: 195px; padding: 7px 12px; font-size: 13px;" onchange="this.form.submit()">
+                    <option value="todos" {% if status_filter == 'todos' %}selected{% endif %}>Todos os Produtos</option>
+                    <option value="lucrativo" {% if status_filter == 'lucrativo' %}selected{% endif %}>🟢 Apenas Lucrativos</option>
+                    <option value="equilibrio" {% if status_filter == 'equilibrio' %}selected{% endif %}>🟡 Ponto de Equilíbrio (0 a 5%)</option>
+                    <option value="prejuizo" {% if status_filter == 'prejuizo' %}selected{% endif %}>🔴 Apenas com Prejuízo</option>
+                    <option value="sem_vendas" {% if status_filter == 'sem_vendas' %}selected{% endif %}>⚪ Sem Vendas Registradas</option>
+                </select>
+            </div>
+
+            <!-- Filtro de Canal -->
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <label style="font-size: 12px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Canal:</label>
+                <select name="canal" class="form-control" style="width: 160px; padding: 7px 12px; font-size: 13px;" onchange="this.form.submit()">
+                    <option value="todos" {% if canal_filter == 'todos' %}selected{% endif %}>Todos os Canais</option>
+                    <option value="shopee" {% if canal_filter == 'shopee' %}selected{% endif %}>Shopee</option>
+                    <option value="mercadolivre" {% if canal_filter == 'mercadolivre' %}selected{% endif %}>Mercado Livre</option>
+                    <option value="tiktok" {% if canal_filter == 'tiktok' %}selected{% endif %}>TikTok Shop</option>
+                </select>
+            </div>
+
+            <!-- Busca por SKU ou Nome -->
+            <div style="flex: 1; min-width: 220px; display: flex; gap: 8px;">
+                <input type="text" name="q" value="{{ search }}" placeholder="Buscar por SKU marketplace, título ou modelo..." class="form-control" style="padding: 7px 12px; font-size: 13px;">
+                <button type="submit" class="btn-primary" style="padding: 7px 16px; font-size: 12.5px;">Filtrar</button>
+            </div>
+
+            {% if status_filter != 'todos' or canal_filter != 'todos' or search %}
+                <a href="{% url 'desempenho_produtos_marketplace' %}" class="btn-secondary" style="font-size: 12px; padding: 7px 12px;">Limpar</a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- 4. TABELA DE DESEMPENHO E ESTRATÉGIAS DOS PRODUTOS -->
+    <div class="table-container">
+        <div class="table-header-box">
+            <div>
+                <h3>Classificação & Ações Estratégicas por Produto</h3>
+                <span class="table-count-badge" style="margin-top: 4px; display: inline-block;">{{ produtos_data|length }} produtos avaliados</span>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="desempenho-table">
+                <thead>
+                    <tr>
+                        <th style="min-width: 110px;">Status Estratégico</th>
+                        <th style="min-width: 180px;">Produto / SKU</th>
+                        <th style="text-align: center; min-width: 70px;">Vendas</th>
+                        <th style="text-align: right; min-width: 90px;">Faturamento</th>
+                        <th style="text-align: right; min-width: 85px;">Taxas Retidas</th>
+                        <th style="text-align: right; min-width: 90px;">Custo Fábrica</th>
+                        <th style="text-align: right; min-width: 80px;">Ads / CAC</th>
+                        <th style="text-align: right; min-width: 95px;">Lucro Líquido</th>
+                        <th style="text-align: right; min-width: 75px;">Margem</th>
+                        <th style="min-width: 300px;">Diagnóstico & Recomendação Estratégica</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in produtos_data %}
+                    <tr>
+                        <!-- Status Estratégico -->
+                        <td>
+                            <span class="status-badge-custom {{ p.status_class }}">
+                                {% if p.status_class == 'lucrativo' %}● Lucrativo{% elif p.status_class == 'equilibrio' %}▲ Equilíbrio{% elif p.status_class == 'prejuizo' %}✕ Prejuízo{% else %}○ Sem Vendas{% endif %}
+                            </span>
+                        </td>
+
+                        <!-- Produto / SKU -->
+                        <td style="min-width: 210px;">
+                            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px; flex-wrap: wrap;">
+                                <span class="canal-badge {{ p.produto.canal }}">{{ p.produto.get_canal_display }}</span>
+                                <span style="font-family: monospace; font-size: 12px; font-weight: 700; color: var(--wine-700);">{{ p.produto.sku_marketplace }}</span>
+                            </div>
+                            <div style="font-size: 12.5px; color: var(--text-primary); font-weight: 600; line-height: 1.35;" title="{{ p.produto.nome_marketplace }}">
+                                {{ p.produto.nome_marketplace|truncatechars:48 }}
+                            </div>
+                            {% if p.produto.produto_fabrica %}
+                                <div style="font-size: 11px; color: #1E6E3C; margin-top: 2px; font-weight: 600;">
+                                    Fábrica: {{ p.produto.produto_fabrica.sku }} ({{ p.produto.produto_fabrica.nome|truncatechars:22 }})
+                                </div>
+                            {% endif %}
+                        </td>
+
+                        <!-- Qtd Vendas -->
+                        <td style="text-align: center;">
+                            <strong style="font-size: 13px; color: var(--text-primary);">{{ p.qtd_vendas }}</strong>
+                            {% if p.qtd_cancelados > 0 %}
+                                <div style="font-size: 10.5px; color: #A32832; font-weight: 600;" title="Pedidos cancelados ou reembolsados">
+                                    {{ p.qtd_cancelados }} canc.
+                                </div>
+                            {% endif %}
+                        </td>
+
+                        <!-- Faturamento (GMV) -->
+                        <td style="text-align: right; white-space: nowrap;">
+                            <strong style="color: var(--text-primary); font-size: 13px;">R$ {{ p.total_gmv|floatformat:2 }}</strong>
+                            {% if p.ticket_medio > 0 %}
+                                <div style="font-size: 10.5px; color: var(--text-muted);" title="Ticket Médio">
+                                    TM: R$ {{ p.ticket_medio|floatformat:2 }}
+                                </div>
+                            {% endif %}
+                        </td>
+
+                        <!-- Taxas Retidas -->
+                        <td style="text-align: right; white-space: nowrap;">
+                            <span style="color: #A32832; font-size: 12px; font-weight: 500;">
+                                - R$ {{ p.total_taxas|floatformat:2 }}
+                            </span>
+                        </td>
+
+                        <!-- Custo da Fábrica (CPV) -->
+                        <td style="text-align: right; white-space: nowrap;">
+                            <span style="color: var(--text-secondary); font-size: 12.5px;">
+                                R$ {{ p.total_cpv|floatformat:2 }}
+                            </span>
+                            <div style="font-size: 10.5px; color: var(--text-muted);">
+                                Unit: R$ {{ p.produto.custo_transferencia_padrao|floatformat:2 }}
+                            </div>
+                        </td>
+
+                        <!-- Ads / CAC -->
+                        <td style="text-align: right; white-space: nowrap;">
+                            {% if p.total_ads > 0 or p.total_ads_perdido > 0 %}
+                                <span style="font-size: 12px; color: #1F6296; font-weight: 600;">
+                                    R$ {{ p.total_ads|floatformat:2 }}
+                                </span>
+                                {% if p.total_ads_perdido > 0 %}
+                                    <div style="font-size: 10.5px; color: #A32832; font-weight: 700;" title="CAC perdido em cancelamentos">
+                                        - R$ {{ p.total_ads_perdido|floatformat:2 }} canc.
+                                    </div>
+                                {% endif %}
+                            {% else %}
+                                <span style="color: var(--text-muted); font-size: 11px;">Orgânico</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Lucro Líquido -->
+                        <td style="text-align: right; white-space: nowrap;">
+                            <strong style="font-size: 14px; color: {% if p.lucro_liquido > 0 %}#1E6E3C{% elif p.lucro_liquido < 0 %}#A32832{% else %}#B26A1B{% endif %};">
+                                R$ {{ p.lucro_liquido|floatformat:2 }}
+                            </strong>
+                        </td>
+
+                        <!-- Margem (%) -->
+                        <td style="text-align: right; white-space: nowrap;">
+                            <span class="badge {% if p.margem_liquida_pct >= 15 %}badge-success{% elif p.margem_liquida_pct >= 5 %}badge-success{% elif p.margem_liquida_pct >= 0 %}badge-warning{% else %}badge-danger{% endif %}" style="font-size: 11px; font-weight: 700; padding: 3px 6px;">
+                                {{ p.margem_liquida_pct|floatformat:1 }}%
+                            </span>
+                        </td>
+
+                        <!-- Diagnóstico & Recomendação Estratégica -->
+                        <td style="min-width: 300px; max-width: 440px;">
+                            <div style="font-size: 12px; line-height: 1.45; color: var(--text-secondary); background: #FAF7F4; border-left: 3px solid {% if p.status_class == 'lucrativo' %}#1E6E3C{% elif p.status_class == 'equilibrio' %}#D9822B{% elif p.status_class == 'prejuizo' %}#A32832{% else %}#6C757D{% endif %}; padding: 8px 12px; border-radius: 6px; word-break: normal; overflow-wrap: break-word; white-space: normal;">
+                                {{ p.recomendacao }}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="10" class="empty-state" style="padding: 32px;">
+                            <p>Nenhum produto encontrado com os filtros selecionados.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Inicialização do Gráfico de Lucro Líquido por Produto
+    document.addEventListener("DOMContentLoaded", function() {
+        const ctx = document.getElementById('chartLucroProdutos');
+        if (!ctx) return;
+
+        const labels = {{ chart_labels_json|safe }};
+        const dataValues = {{ chart_lucros_json|safe }};
+        const bgColors = {{ chart_colors_json|safe }};
+        const borderColors = {{ chart_borders_json|safe }};
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Lucro Líquido Real (R$)',
+                    data: dataValues,
+                    backgroundColor: bgColors,
+                    borderColor: borderColors,
+                    borderWidth: 1.5,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y', // Barra horizontal para leitura confortável de SKUs
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const val = context.raw;
+                                return (val >= 0 ? 'Lucro: +R$ ' : 'Prejuízo: R$ ') + val.toFixed(2).replace('.', ',');
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.06)'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return 'R$ ' + value;
+                            },
+                            font: {
+                                size: 11
+                            }
+                        }
+                    },
+                    y: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            font: {
+                                size: 11,
+                                weight: '600'
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

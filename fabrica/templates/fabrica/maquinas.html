@@ -1,0 +1,169 @@
+{% extends 'fabrica/base.html' %}
+{% load static %}
+
+{% block title %}Tipos de Máquinas - Disfarce{% endblock %}
+{% block breadcrumb %}Tipos de Máquinas{% endblock %}
+{% block page_title %}Gerenciamento de Tipos de Máquinas de Costura{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 1000px;">
+    
+    <!-- Alerta Informativo de Espelhamento com Estudo de Tempos -->
+    <div style="background: #FAF0E6; border: 1px solid var(--border-light); border-left: 4px solid var(--wine-600); border-radius: var(--radius-md); padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--wine-100); color: var(--wine-800); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                </svg>
+            </div>
+            <div>
+                <strong style="color: var(--wine-900); font-size: 13.5px; display: block;">Espelhamento com Estudo de Tempos Ativo</strong>
+                <span style="font-size: 12px; color: var(--text-secondary);">
+                    As máquinas cadastradas no <strong>Estudo de Tempos (TP)</strong> são espelhadas automaticamente aqui e disponibilizadas para associação aos <strong>Faccionistas</strong> e <strong>Costureiras da Fábrica</strong>.
+                </span>
+            </div>
+        </div>
+
+        {% if request.user.is_superuser %}
+        <form method="post" style="margin: 0;">
+            {% csrf_token %}
+            <input type="hidden" name="acao" value="sincronizar_estudo">
+            <button type="submit" class="btn-secondary" style="font-size: 12px; padding: 7px 14px; background: #FFFFFF; display: inline-flex; align-items: center; gap: 6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                </svg>
+                <span>Forçar Sincronização</span>
+            </button>
+        </form>
+        {% endif %}
+    </div>
+
+    {% if request.user.is_superuser %}
+    <!-- Formulário de Cadastro de Máquina -->
+    <div class="card" style="margin-bottom: 24px;">
+        <div class="card-header">
+            <h3>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="16" height="16" x="4" y="4" rx="2"/>
+                    <rect width="6" height="6" x="9" y="9" rx="1"/>
+                    <path d="M15 2v2"/>
+                    <path d="M15 20v2"/>
+                    <path d="M2 15h2"/>
+                    <path d="M2 9h2"/>
+                    <path d="M20 15h2"/>
+                    <path d="M20 9h2"/>
+                    <path d="M9 2v2"/>
+                    <path d="M9 20v2"/>
+                </svg>
+                Cadastrar Novo Tipo de Máquina
+            </h3>
+        </div>
+        
+        <form method="post" style="display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; padding: 18px 20px;">
+            {% csrf_token %}
+            <div class="form-group" style="width: 140px; margin-bottom: 0;">
+                <label style="font-size: 11.5px;">Código (Opcional)</label>
+                <input type="text" name="codigo" placeholder="Ex: RET, OVL" class="form-control" style="font-size: 13px; text-transform: uppercase;">
+            </div>
+            <div class="form-group" style="flex: 1; min-width: 220px; margin-bottom: 0;">
+                <label style="font-size: 11.5px;">Nome do Maquinário *</label>
+                <input type="text" name="nome" placeholder="Ex: Reta Industrial, Overlock, Galoneira, Elastiqueira..." class="form-control" style="font-size: 13px;" required>
+            </div>
+            <button type="submit" class="btn-primary" style="height: 42px; white-space: nowrap; padding: 0 20px; display: inline-flex; align-items: center; gap: 8px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <span>Adicionar Máquina</span>
+            </button>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- Tabela de Máquinas -->
+    <div class="table-container">
+        <div class="table-header-box" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <h3>Máquinas Cadastradas no Sistema</h3>
+                <span class="table-count-badge">{{ maquinas|length }} tipos</span>
+            </div>
+            <div style="font-size: 12px; color: var(--text-muted);">
+                Disponíveis no cadastro de Prestadores & Faccionistas
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width: 110px;">Código</th>
+                        <th>Nome do Maquinário</th>
+                        <th>Origem / Estudo de Tempos</th>
+                        <th>Base de Cálculo TP</th>
+                        {% if request.user.is_superuser %}
+                        <th style="text-align: right; width: 100px;">Ações</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for maq in maquinas %}
+                    <tr>
+                        <td>
+                            {% if maq.codigo %}
+                            <span style="display: inline-block; padding: 3px 8px; border-radius: 4px; background: var(--wine-50); color: var(--wine-800); font-weight: 700; font-family: monospace; font-size: 12px; border: 1px solid var(--wine-200);">
+                                {{ maq.codigo }}
+                            </span>
+                            {% else %}
+                            <span style="color: var(--text-muted); font-size: 12px;">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <strong style="color: var(--wine-900); font-size: 14px;">{{ maq.nome }}</strong>
+                        </td>
+                        <td>
+                            {% if maq.referencia_operacao %}
+                            <span style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 12px; background: #E8F6EE; color: #1E6E3C; font-size: 11.5px; font-weight: 700; border: 1px solid #BCE7CC;">
+                                <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #1E6E3C;"></span>
+                                Estudo de Tempos
+                            </span>
+                            {% else %}
+                            <span style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 12px; background: #F3F4F6; color: #4B5563; font-size: 11.5px; font-weight: 600;">
+                                Cadastro Manual
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if maq.referencia_operacao %}
+                            <div style="font-size: 12px; color: var(--text-primary);">
+                                <strong>{{ maq.referencia_operacao.tempo_base }} min</strong>
+                                <span style="color: var(--text-muted); font-size: 11px;">
+                                    / {% if maq.referencia_operacao.tipo_calculo == '10cm' %}a cada 10 cm{% else %}por batida/unidade{% endif %}
+                                </span>
+                            </div>
+                            {% else %}
+                            <span style="color: var(--text-muted); font-size: 12px;">Não definido</span>
+                            {% endif %}
+                        </td>
+                        {% if request.user.is_superuser %}
+                        <td style="text-align: right; white-space: nowrap;">
+                            <a href="{% url 'excluir_maquina' maq.id %}" class="btn-acao btn-excluir" onclick="return confirm('Deseja realmente excluir a máquina {{ maq.nome }}?');" title="Excluir máquina">
+                                Excluir
+                            </a>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="{% if request.user.is_superuser %}5{% else %}4{% endif %}" class="empty-state">
+                            <p>Nenhuma máquina cadastrada.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,207 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acesso ao Sistema - Disfarce Confecção</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body.login-body {
+            background: linear-gradient(135deg, #42161A 0%, #6F2E34 50%, #883B43 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Elementos sutis de fundo para dar profundidade */
+        body.login-body::before {
+            content: '';
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(237, 228, 214, 0.08) 0%, rgba(0,0,0,0) 70%);
+            top: -100px;
+            left: -100px;
+            pointer-events: none;
+        }
+
+        body.login-body::after {
+            content: '';
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0, 0, 0, 0.25) 0%, rgba(0,0,0,0) 70%);
+            bottom: -150px;
+            right: -100px;
+            pointer-events: none;
+        }
+
+        .login-card {
+            background-color: #FFFFFF;
+            padding: 44px 38px;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 20px 45px -10px rgba(45, 12, 16, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        .login-logo {
+            max-width: 180px;
+            height: auto;
+            margin-bottom: 12px;
+            filter: drop-shadow(0 2px 6px rgba(111, 46, 52, 0.15));
+        }
+
+        .login-subtitle {
+            font-size: 13px;
+            color: #7A696C;
+            margin-bottom: 28px;
+            font-weight: 500;
+        }
+
+        .error-msg {
+            color: #9B2C2C;
+            background-color: #FDF2F2;
+            border: 1px solid #F8B4B4;
+            padding: 12px 14px;
+            border-radius: 10px;
+            margin-bottom: 22px;
+            font-size: 13px;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .login-form .form-group {
+            margin-bottom: 18px;
+            text-align: left;
+        }
+
+        .login-form label {
+            display: block;
+            margin-bottom: 7px;
+            color: #4A3C3E;
+            font-weight: 600;
+            font-size: 12.5px;
+            letter-spacing: 0.3px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .login-form input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #D8C7B5;
+            border-radius: 10px;
+            background-color: #FAF6F2;
+            font-size: 14px;
+            color: #23191B;
+            transition: all 0.2s ease;
+        }
+
+        .login-form input:focus {
+            outline: none;
+            background-color: #FFFFFF;
+            border-color: #6F2E34;
+            box-shadow: 0 0 0 3px rgba(111, 46, 52, 0.14);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 13px;
+            background: linear-gradient(135deg, #6F2E34 0%, #521F24 100%);
+            color: #FCF7F2;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            margin-top: 10px;
+            box-shadow: 0 4px 12px rgba(111, 46, 52, 0.25);
+        }
+
+        .btn-login:hover {
+            background: linear-gradient(135deg, #582429 0%, #3B1418 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(111, 46, 52, 0.35);
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        .login-footer-info {
+            margin-top: 28px;
+            font-size: 11.5px;
+            color: #A39396;
+            border-top: 1px solid #EFE8DF;
+            padding-top: 16px;
+        }
+    </style>
+</head>
+<body class="login-body">
+    <div class="login-card">
+        <img src="{% static 'fabrica/img/logo_login.png' %}?v=3" alt="Disfarce" class="login-logo">
+        <div class="login-subtitle">Sistema de Gestão e Controle Fabril</div>
+        
+        {% if form.errors %}
+            <div class="error-msg">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" x2="12" y1="8" y2="12"/>
+                    <line x1="12" x2="12.01" y1="16" y2="16"/>
+                </svg>
+                <span>Usuário ou senha incorretos. Tente novamente.</span>
+            </div>
+        {% endif %}
+
+        <form method="post" class="login-form">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="id_username">Nome de Usuário</label>
+                <div class="input-wrapper">
+                    <input type="text" name="username" id="id_username" required autofocus placeholder="Digite seu usuário">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="id_password">Senha de Acesso</label>
+                <div class="input-wrapper">
+                    <input type="password" name="password" id="id_password" required placeholder="Digite sua senha">
+                </div>
+            </div>
+            <button type="submit" class="btn-login">Acessar Painel</button>
+        </form>
+
+        <div class="login-footer-info">
+            &copy; Disfarce Confecção &bull; Todos os direitos reservados
+        </div>
+    </div>
+</body>
+</html>

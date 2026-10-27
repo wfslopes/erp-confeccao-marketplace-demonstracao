@@ -1,0 +1,482 @@
+{% extends 'fabrica/base.html' %}
+{% load static %}
+
+{% block title %}Pedidos & Previsão de Insumos - Disfarce{% endblock %}
+{% block breadcrumb %}Pedidos & Insumos{% endblock %}
+{% block page_title %}Painel de Pedidos & Previsão de Matéria-Prima{% endblock %}
+
+{% block extra_head %}
+<style>
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+    .kpi-card {
+        background: #FFFFFF;
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-md);
+        padding: 18px 20px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        box-shadow: var(--shadow-sm);
+        transition: transform 0.2s ease;
+    }
+    .kpi-card:hover {
+        transform: translateY(-2px);
+    }
+    .kpi-icon-box {
+        width: 46px;
+        height: 46px;
+        border-radius: var(--radius-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .kpi-icon-wine {
+        background: #FAF0E6;
+        color: var(--wine-700);
+    }
+    .kpi-icon-green {
+        background: #E8F5E9;
+        color: #2E7D32;
+    }
+    .kpi-icon-blue {
+        background: #E3F2FD;
+        color: #1565C0;
+    }
+    .kpi-icon-amber {
+        background: #FFF8E1;
+        color: #B78103;
+    }
+    .kpi-label {
+        font-size: 11.5px;
+        text-transform: uppercase;
+        font-weight: 700;
+        color: var(--text-muted);
+        letter-spacing: 0.5px;
+    }
+    .kpi-val {
+        font-size: 22px;
+        font-weight: 800;
+        color: var(--text-primary);
+        line-height: 1.2;
+        margin-top: 2px;
+    }
+    .grade-item-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 2fr 40px;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 10px;
+        background: var(--bg-subtle);
+        padding: 10px 14px;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border-light);
+    }
+    @media (max-width: 768px) {
+        .grade-item-row {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    <!-- 1. KPIs Rápidos -->
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-icon-box kpi-icon-wine">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+                </svg>
+            </div>
+            <div>
+                <div class="kpi-label">Total de Pedidos</div>
+                <div class="kpi-val">{{ total_pedidos }}</div>
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-icon-box kpi-icon-blue">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                </svg>
+            </div>
+            <div>
+                <div class="kpi-label">Pedidos Ativos</div>
+                <div class="kpi-val">{{ pedidos_ativos }}</div>
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-icon-box kpi-icon-amber">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                    <polyline points="2 17 12 22 22 17"/>
+                    <polyline points="2 12 12 17 22 12"/>
+                </svg>
+            </div>
+            <div>
+                <div class="kpi-label">Peças Encomendadas</div>
+                <div class="kpi-val">{{ total_pecas }} <small style="font-size: 13px; font-weight: 600; color: var(--text-muted);">pçs</small></div>
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-icon-box kpi-icon-green">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="1" x2="12" y2="23"/>
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                </svg>
+            </div>
+            <div>
+                <div class="kpi-label">Valor em Carteira</div>
+                <div class="kpi-val">R$ {{ total_faturamento|floatformat:2 }}</div>
+            </div>
+        </div>
+    </div>
+
+    {% if request.user.is_superuser %}
+    <!-- 2. Formulário de Novo Pedido -->
+    <div class="card" style="margin-bottom: 28px;">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h3>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+                    <line x1="12" y1="11" x2="12" y2="17"/>
+                    <line x1="9" y1="14" x2="15" y2="14"/>
+                </svg>
+                Lançar Novo Pedido de Produção
+            </h3>
+            <a href="{% url 'clientes' %}" class="btn-atalho" style="font-size: 12px; padding: 6px 14px;">
+                <span>+ Novo Cliente</span>
+            </a>
+        </div>
+
+        <form method="post" style="padding-top: 8px;">
+            {% csrf_token %}
+            <input type="hidden" name="acao" value="criar_pedido">
+
+            <!-- Cabeçalho do Pedido -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 18px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Cliente / Comprador *</label>
+                    <select name="cliente" class="form-control" required>
+                        <option value="">Selecione o cliente...</option>
+                        {% for c in clientes %}
+                            <option value="{{ c.id }}">{{ c.nome }}{% if c.tag %} [TAG: {{ c.tag }}]{% endif %}{% if c.cidade %} ({{ c.cidade }}/{{ c.uf }}){% endif %}</option>
+                        {% empty %}
+                            <option value="" disabled>Nenhum cliente cadastrado ainda</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Nº do Pedido</label>
+                    <input type="text" name="numero_pedido" placeholder="Ex: PED-001 (Auto se vazio)" class="form-control">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Data do Pedido *</label>
+                    <input type="date" name="data_pedido" id="input-data-pedido" class="form-control" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Previsão de Entrega</label>
+                    <input type="date" name="data_entrega_prevista" class="form-control">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Status Inicial *</label>
+                    <select name="status" class="form-control" required>
+                        <option value="confirmado" selected>Confirmado / Aguardando Insumos</option>
+                        <option value="orcamento">Orçamento / Em Análise</option>
+                        <option value="em_producao">Em Produção</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label>Observações do Pedido / Instruções Gerais</label>
+                <input type="text" name="observacoes" placeholder="Ex: Etiqueta personalizada do cliente, embalagem em pacotes com 5 un..." class="form-control">
+            </div>
+
+            <!-- Grade Dinâmica de Produtos a Produzir -->
+            <div style="border-top: 1px solid var(--border-light); padding-top: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <div>
+                        <h4 style="color: var(--wine-700); font-size: 13px; text-transform: uppercase; font-weight: 700; margin-bottom: 2px;">
+                            Produtos & Quantidades a Produzir
+                        </h4>
+                        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 0;">
+                            A previsão de matéria-prima e a lista de compras serão geradas automaticamente a partir da ficha técnica de cada item.
+                        </p>
+                    </div>
+                    <button type="button" class="btn-adicionar" onclick="adicionarLinhaProduto()" style="padding: 7px 14px;">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        <span>Adicionar Item</span>
+                    </button>
+                </div>
+
+                <div id="itens-container">
+                    <div class="grade-item-row">
+                        <div>
+                            <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Produto / Referência *</label>
+                            <select name="produto[]" class="form-control" required>
+                                <option value="">Selecione o produto...</option>
+                                {% for prod in produtos %}
+                                    <option value="{{ prod.id }}">{{ prod.sku }} - {{ prod.nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Qtd (Peças) *</label>
+                            <input type="number" name="quantidade[]" value="50" min="1" class="form-control" required>
+                        </div>
+                        <div>
+                            <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Preço Unit. R$</label>
+                            <input type="number" step="0.01" name="preco_unitario[]" placeholder="0.00" class="form-control">
+                        </div>
+                        <div>
+                            <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Grade / Cores / Tamanhos</label>
+                            <input type="text" name="grade[]" placeholder="Ex: P: 10, M: 20, G: 20 (Preto/Branco)" class="form-control">
+                        </div>
+                        <div style="text-align: right; padding-top: 18px;">
+                            <button type="button" class="btn-remover-linha" onclick="removerLinhaProduto(this)" title="Remover item">&times;</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px; text-align: right; border-top: 1px solid var(--border-light); padding-top: 16px;">
+                <button type="submit" class="btn-primary" style="padding: 11px 28px; font-size: 14px;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                        <polyline points="17 21 17 13 7 13 7 21"/>
+                        <polyline points="7 3 7 8 15 8"/>
+                    </svg>
+                    <span>Salvar Pedido & Gerar Previsão de Insumos</span>
+                </button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- 3. Barra de Filtros e Busca -->
+    <div class="card" style="padding: 16px 20px; margin-bottom: 24px;">
+        <form method="get" style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <label style="font-size: 12px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Status:</label>
+                <select name="status" class="form-control" style="width: 190px; padding: 7px 12px; font-size: 13px;" onchange="this.form.submit()">
+                    <option value="todos" {% if status_filter == 'todos' %}selected{% endif %}>Todos os Status</option>
+                    <option value="confirmado" {% if status_filter == 'confirmado' %}selected{% endif %}>Confirmado / Aguardando</option>
+                    <option value="em_producao" {% if status_filter == 'em_producao' %}selected{% endif %}>Em Produção</option>
+                    <option value="orcamento" {% if status_filter == 'orcamento' %}selected{% endif %}>Orçamento</option>
+                    <option value="concluido" {% if status_filter == 'concluido' %}selected{% endif %}>Concluído / Entregue</option>
+                    <option value="cancelado" {% if status_filter == 'cancelado' %}selected{% endif %}>Cancelado</option>
+                </select>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <label style="font-size: 12px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Cliente:</label>
+                <select name="cliente" class="form-control" style="width: 200px; padding: 7px 12px; font-size: 13px;" onchange="this.form.submit()">
+                    <option value="">Todos os Clientes</option>
+                    {% for c in clientes %}
+                        <option value="{{ c.id }}" {% if cliente_id == c.id|stringformat:'s' %}selected{% endif %}>{{ c.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="flex: 1; min-width: 200px; position: relative;">
+                <input type="text" name="q" value="{{ search }}" placeholder="Buscar por número do pedido, cliente, modelo ou cidade..." class="form-control" style="padding: 7px 12px; font-size: 13px;">
+            </div>
+
+            <button type="submit" class="btn-primary" style="padding: 7px 16px; font-size: 13px;">Filtrar</button>
+            {% if search or status_filter != 'todos' or cliente_id %}
+                <a href="{% url 'pedidos' %}" class="btn-secondary" style="padding: 7px 14px; font-size: 12px;">Limpar</a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- 4. Tabela de Pedidos Registrados -->
+    <div class="table-container">
+        <div class="table-header-box">
+            <h3>Pedidos de Produção Registrados</h3>
+            <span class="table-count-badge">{{ pedidos|length }} pedidos</span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="min-width: 130px;">Nº Pedido</th>
+                        <th style="min-width: 180px;">Cliente</th>
+                        <th style="min-width: 140px;">Datas (Pedido / Entrega)</th>
+                        <th style="min-width: 170px;">Itens a Produzir</th>
+                        <th style="min-width: 120px;">Valor Total</th>
+                        <th style="min-width: 130px;">Status</th>
+                        <th style="text-align: right; min-width: 200px;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ped in pedidos %}
+                    <tr>
+                        <td>
+                            <strong style="color: var(--wine-800); font-size: 14px;">{{ ped.numero_pedido }}</strong>
+                        </td>
+                        <td>
+                            <div style="font-weight: 700; color: var(--text-primary); font-size: 13.5px;">{{ ped.cliente.nome }}</div>
+                            {% if ped.cliente.tag %}
+                                <div style="margin-top: 3px;">
+                                    <span class="tag-pill" style="background: #FAF5F0; color: var(--wine-700); font-weight: 700; font-size: 11px; padding: 2px 7px; border: 1px solid var(--wine-200);">
+                                        🏷️ TAG: {{ ped.cliente.tag }}
+                                    </span>
+                                </div>
+                            {% endif %}
+                            {% if ped.cliente.cidade %}
+                                <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">{{ ped.cliente.cidade }}/{{ ped.cliente.uf }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="font-size: 12px; color: var(--text-secondary);">
+                                Pedido: <strong>{{ ped.data_pedido|date:'d/m/Y' }}</strong>
+                            </div>
+                            <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                                Entrega: <strong>{{ ped.data_entrega_prevista|date:'d/m/Y'|default:"A definir" }}</strong>
+                            </div>
+                        </td>
+                        <td>
+                            <div style="font-weight: 700; color: var(--wine-700); font-size: 13px;">
+                                {{ ped.quantidade_total_pecas }} peças
+                            </div>
+                            <div style="font-size: 11.5px; color: var(--text-muted);">
+                                {% for it in ped.itens.all|slice:":2" %}
+                                    <span>{{ it.quantidade }}x {{ it.produto.sku }}</span>{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                                {% if ped.itens.count > 2 %}... (+{{ ped.itens.count|add:"-2" }}){% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <strong style="color: #1E6E3C; font-size: 13.5px;">R$ {{ ped.valor_total|floatformat:2 }}</strong>
+                        </td>
+                        <td>
+                            {% if ped.status == 'confirmado' %}
+                                <span class="badge badge-info">{{ ped.get_status_display }}</span>
+                            {% elif ped.status == 'em_producao' %}
+                                <span class="badge badge-warning">{{ ped.get_status_display }}</span>
+                            {% elif ped.status == 'concluido' %}
+                                <span class="badge badge-success">{{ ped.get_status_display }}</span>
+                            {% elif ped.status == 'cancelado' %}
+                                <span class="badge badge-wine">{{ ped.get_status_display }}</span>
+                            {% else %}
+                                <span class="badge badge-warning">{{ ped.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: right; white-space: nowrap;">
+                            <!-- Botão Previsão & Detalhes -->
+                            <a href="{% url 'detalhe_pedido' ped.id %}" class="btn-acao btn-editar" title="Ver Previsão de Matéria-Prima e Detalhes">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
+                                Insumos
+                            </a>
+
+                            <!-- Botão Imprimir Lista de Compras -->
+                            <a href="{% url 'imprimir_lista_compras' ped.id %}" target="_blank" class="btn-acao" style="background: #FAF0E6; color: var(--wine-800); border: 1px solid #E6D0BA;" title="Imprimir Lista de Compras">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="6 9 6 2 18 2 18 9"/>
+                                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                                    <rect width="12" height="8" x="6" y="14"/>
+                                </svg>
+                                Lista Compras
+                            </a>
+
+                            {% if request.user.is_superuser %}
+                            <a href="{% url 'excluir_pedido' ped.id %}" class="btn-acao btn-excluir" onclick="return confirm('Deseja excluir o pedido {{ ped.numero_pedido }}?');">
+                                Excluir
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="empty-state">
+                            <p>Nenhum pedido de produção encontrado.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Inicializar data do pedido com a data de hoje caso vazia
+    document.addEventListener('DOMContentLoaded', function() {
+        const inputData = document.getElementById('input-data-pedido');
+        if (inputData && !inputData.value) {
+            const hoje = new Date().toISOString().split('T')[0];
+            inputData.value = hoje;
+        }
+    });
+
+    function adicionarLinhaProduto() {
+        const container = document.getElementById('itens-container');
+        const novaLinha = document.createElement('div');
+        novaLinha.className = 'grade-item-row';
+        novaLinha.innerHTML = `
+            <div>
+                <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Produto / Referência *</label>
+                <select name="produto[]" class="form-control" required>
+                    <option value="">Selecione o produto...</option>
+                    {% for prod in produtos %}
+                        <option value="{{ prod.id }}">{{ prod.sku }} - {{ prod.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Qtd (Peças) *</label>
+                <input type="number" name="quantidade[]" value="50" min="1" class="form-control" required>
+            </div>
+            <div>
+                <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Preço Unit. R$</label>
+                <input type="number" step="0.01" name="preco_unitario[]" placeholder="0.00" class="form-control">
+            </div>
+            <div>
+                <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Grade / Cores / Tamanhos</label>
+                <input type="text" name="grade[]" placeholder="Ex: P: 10, M: 20, G: 20" class="form-control">
+            </div>
+            <div style="text-align: right; padding-top: 18px;">
+                <button type="button" class="btn-remover-linha" onclick="removerLinhaProduto(this)" title="Remover item">&times;</button>
+            </div>
+        `;
+        container.appendChild(novaLinha);
+    }
+
+    function removerLinhaProduto(btn) {
+        const rows = document.querySelectorAll('.grade-item-row');
+        if (rows.length > 1) {
+            btn.closest('.grade-item-row').remove();
+        } else {
+            alert('O pedido deve possuir ao menos 1 item.');
+        }
+    }
+</script>
+{% endblock %}

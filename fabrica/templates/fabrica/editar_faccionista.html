@@ -1,0 +1,87 @@
+{% extends 'fabrica/base.html' %}
+{% load static %}
+
+{% block title %}Editar Faccionista - Disfarce{% endblock %}
+{% block breadcrumb %}Faccionistas &rsaquo; Editar{% endblock %}
+{% block page_title %}Editar Cadastro: {{ faccionista.nome }}{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 680px;">
+    <div class="card">
+        <div class="card-header">
+            <h3>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+                </svg>
+                Atualizar Cadastro da Faccionista
+            </h3>
+        </div>
+        
+        <form method="post" style="display: flex; flex-direction: column; gap: 14px;">
+            {% csrf_token %}
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label>Tipo de Prestador / Colaborador *</label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <label style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: {% if faccionista.tipo == 'faccionista' %}#FAF5F0{% else %}var(--bg-subtle){% endif %}; border: {% if faccionista.tipo == 'faccionista' %}2px solid var(--wine-600){% else %}1px solid var(--border-light){% endif %}; border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; font-weight: 600;">
+                        <input type="radio" name="tipo" value="faccionista" {% if faccionista.tipo == 'faccionista' %}checked{% endif %} style="accent-color: var(--wine-600);">
+                        <span>Faccionista Externa</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: {% if faccionista.tipo == 'costureira_interna' %}#FAF5F0{% else %}var(--bg-subtle){% endif %}; border: {% if faccionista.tipo == 'costureira_interna' %}2px solid var(--wine-600){% else %}1px solid var(--border-light){% endif %}; border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; font-weight: 600;">
+                        <input type="radio" name="tipo" value="costureira_interna" {% if faccionista.tipo == 'costureira_interna' %}checked{% endif %} style="accent-color: var(--wine-600);">
+                        <span>Costureira da Fábrica</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label>Nome / Razão Social *</label>
+                <input type="text" name="nome" value="{{ faccionista.nome }}" class="form-control" required>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label>Telefone / WhatsApp</label>
+                <input type="text" name="telefone" value="{{ faccionista.telefone|default:'' }}" class="form-control">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 10px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>CEP</label>
+                    <input type="text" name="cep" value="{{ faccionista.cep|default:'' }}" class="form-control">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Endereço Completo</label>
+                    <input type="text" name="endereco" value="{{ faccionista.endereco|default:'' }}" class="form-control">
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label>Ponto de Referência</label>
+                <input type="text" name="ponto_referencia" value="{{ faccionista.ponto_referencia|default:'' }}" class="form-control">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label>Parque de Máquinas Disponíveis</label>
+                <div style="max-height: 140px; overflow-y: auto; background: var(--bg-subtle); padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-light); display: flex; flex-direction: column; gap: 6px;">
+                    {% for maq in maquinas_disponiveis %}
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; cursor: pointer;">
+                            <input type="checkbox" name="maquinas" value="{{ maq.id }}" {% if maq in faccionista.maquinas.all %}checked{% endif %} style="accent-color: var(--wine-600); width: 16px; height: 16px;">
+                            {% if maq.codigo %}
+                            <strong style="font-family: monospace; font-size: 11px; background: #FFF; padding: 1px 5px; border-radius: 3px; border: 1px solid var(--border-light); color: var(--wine-800);">{{ maq.codigo }}</strong>
+                            {% endif %}
+                            <span>{{ maq.nome }}</span>
+                        </label>
+                    {% empty %}
+                        <small style="color: var(--text-muted);">Nenhuma máquina cadastrada.</small>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-top: 10px;">
+                <button type="submit" class="btn-primary" style="flex: 1; padding: 11px;">Salvar Alterações</button>
+                <a href="{% url 'faccionistas' %}" class="btn-secondary" style="flex: 1; text-align: center;">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,295 @@
+{% extends 'fabrica/base.html' %}
+{% load static %}
+
+{% block title %}Visão Geral - Disfarce Confecção{% endblock %}
+{% block breadcrumb %}Visão Geral{% endblock %}
+{% block page_title %}Painel Operacional & Indicadores{% endblock %}
+
+{% block extra_head %}
+<style>
+    a.stat-card,
+    a.stat-card:hover,
+    a.stat-card:focus,
+    a.stat-card:visited,
+    a.stat-card:active,
+    a.stat-card * {
+        text-decoration: none !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Banner de Boas-Vindas -->
+    <div class="hero-banner">
+        <div class="hero-text">
+            <h1>Visão Geral — {{ request.user.username|capfirst }}</h1>
+            <p>Acompanhe em tempo real as etapas de corte, confecção, faccionistas parceiras e o fluxo de produção da Disfarce.</p>
+        </div>
+    </div>
+
+    {% if request.user.is_superuser %}
+    <!-- Atalhos Rápidos com Estilo de Pílulas Modernas -->
+    <div class="atalhos-box">
+        <a href="{% url 'lotes_corte' %}" class="btn-atalho primary">
+            <span class="btn-icon">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+            </span>
+            <span>Novo Lote de Corte</span>
+        </a>
+        <a href="{% url 'pedidos' %}" class="btn-atalho">
+            <span class="btn-icon">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+            </span>
+            <span>Novo Pedido & Insumos</span>
+        </a>
+        <a href="{% url 'producao' %}" class="btn-atalho">
+            <span class="btn-icon">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+            </span>
+            <span>Distribuir Produção</span>
+        </a>
+        <a href="{% url 'produtos' %}" class="btn-atalho">
+            <span class="btn-icon">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+            </span>
+            <span>Cadastrar Produto</span>
+        </a>
+        <a href="{% url 'faccionistas' %}" class="btn-atalho">
+            <span class="btn-icon">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+            </span>
+            <span>Cadastrar Faccionista</span>
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Cards de Indicadores (KPIs) -->
+    <div class="dashboard-grid">
+        <!-- Card 1: Produtos Cadastrados -->
+        <a href="{% url 'produtos' %}" class="stat-card" style="text-decoration: none;">
+            <div class="stat-card-header">
+                <h4>Produtos & Modelos</h4>
+                <div class="stat-card-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m20.59 13.41-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+                        <line x1="7" x2="7.01" y1="7" y2="7"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="value">{{ total_produtos }}</div>
+            <div class="stat-desc">
+                <span class="tag-pill">Catálogo Ativo</span>
+                <span class="stat-card-action">
+                    <span>Acessar</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </span>
+            </div>
+        </a>
+
+        <!-- Card 2: Faccionistas Ativos -->
+        <a href="{% url 'faccionistas' %}" class="stat-card" style="text-decoration: none;">
+            <div class="stat-card-header">
+                <h4>Faccionistas Ativas</h4>
+                <div class="stat-card-icon green">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="value">{{ total_faccionistas }}</div>
+            <div class="stat-desc">
+                <span class="tag-pill">Oficinas Parceiras</span>
+                <span class="stat-card-action">
+                    <span>Acessar</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </span>
+            </div>
+        </a>
+
+        <!-- Card 3: Cortes em Andamento -->
+        <a href="{% url 'lotes_corte' %}" class="stat-card" style="text-decoration: none;">
+            <div class="stat-card-header">
+                <h4>Cortes em Aberto</h4>
+                <div class="stat-card-icon amber">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="6" cy="6" r="3"/>
+                        <path d="M8.12 8.12 12 12"/>
+                        <path d="M20 4 8.12 15.88"/>
+                        <circle cx="6" cy="18" r="3"/>
+                        <path d="M14.8 14.8 20 20"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="value">{{ lotes_corte_abertos }}</div>
+            <div class="stat-desc">
+                <span class="tag-pill">Fase de Corte</span>
+                <span class="stat-card-action">
+                    <span>Acessar</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </span>
+            </div>
+        </a>
+
+        <!-- Card 4: Produção em Aberto -->
+        <a href="{% url 'producao' %}" class="stat-card" style="text-decoration: none;">
+            <div class="stat-card-header">
+                <h4>Costura em Andamento</h4>
+                <div class="stat-card-icon blue">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                        <polyline points="2 17 12 22 22 17"/>
+                        <polyline points="2 12 12 17 22 12"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="value">{{ producao_andamento }}</div>
+            <div class="stat-desc">
+                <span class="tag-pill">Sub-lotes Ativos</span>
+                <span class="stat-card-action">
+                    <span>Acessar</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </span>
+            </div>
+        </a>
+    </div>
+
+    <!-- Tabelas Recentes Lado a Lado -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(440px, 1fr)); gap: 24px;">
+        
+        <!-- Últimos Lotes de Corte -->
+        <div class="table-container" style="margin-bottom: 0;">
+            <div class="table-header-box">
+                <h3>Últimos Lotes de Corte</h3>
+                <a href="{% url 'lotes_corte' %}" class="table-count-badge" style="text-decoration: none; color: var(--wine-600); display: inline-flex; align-items: center; gap: 4px;">
+                    <span>Ver Todos</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Código Lote</th>
+                            <th>Produto / SKU</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for corte in ultimos_cortes %}
+                        <tr>
+                            <td>
+                                <strong style="color: var(--wine-700); font-size: 13.5px;">{{ corte.codigo_lote }}</strong>
+                            </td>
+                            <td>
+                                <span class="tag-pill">{{ corte.produto.sku }}</span>
+                                <span style="color: var(--text-secondary); font-size: 12.5px;">{{ corte.produto.nome }}</span>
+                            </td>
+                            <td>
+                                {% if corte.status == 'finalizado' %}
+                                    <span class="badge badge-success">{{ corte.get_status_display }}</span>
+                                {% elif corte.status == 'pronto' %}
+                                    <span class="badge badge-info">{{ corte.get_status_display }}</span>
+                                {% else %}
+                                    <span class="badge badge-warning">{{ corte.get_status_display }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="empty-state">
+                                <p>Nenhum lote de corte cadastrado recentemente.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Últimos Sub-lotes em Produção -->
+        <div class="table-container" style="margin-bottom: 0;">
+            <div class="table-header-box">
+                <h3>Últimos Sub-lotes em Produção</h3>
+                <a href="{% url 'producao' %}" class="table-count-badge" style="text-decoration: none; color: var(--wine-600); display: inline-flex; align-items: center; gap: 4px;">
+                    <span>Ver Todos</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Sub-lote</th>
+                            <th>Destino / Facção</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for prod in ultimos_producao %}
+                        <tr>
+                            <td>
+                                <strong style="color: var(--wine-700); font-size: 13.5px;">{{ prod.codigo_sub_lote }}</strong>
+                            </td>
+                            <td>
+                                {% if prod.faccionista %}
+                                    <span style="font-weight: 600; color: var(--text-primary);">{{ prod.faccionista.nome }}</span>
+                                {% else %}
+                                    <span class="badge badge-wine" style="font-size: 11px;">Costura Interna</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if prod.status == 'concluido' %}
+                                    <span class="badge badge-success">{{ prod.get_status_display }}</span>
+                                {% else %}
+                                    <span class="badge badge-info">{{ prod.get_status_display }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="empty-state">
+                                <p>Nenhum lote de costura cadastrado recentemente.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

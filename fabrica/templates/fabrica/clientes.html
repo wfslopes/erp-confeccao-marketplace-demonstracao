@@ -1,0 +1,197 @@
+{% extends 'fabrica/base.html' %}
+{% load static %}
+
+{% block title %}Clientes & Compradores - Disfarce{% endblock %}
+{% block breadcrumb %}Clientes{% endblock %}
+{% block page_title %}Cadastro e Gestão de Clientes{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    {% if request.user.is_superuser %}
+    <!-- 1. Formulário de Cadastro de Cliente -->
+    <div class="card" style="margin-bottom: 28px;">
+        <div class="card-header">
+            <h3>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <line x1="19" y1="8" x2="19" y2="14"/>
+                    <line x1="16" y1="11" x2="22" y2="11"/>
+                </svg>
+                Cadastrar Novo Cliente / Comprador
+            </h3>
+        </div>
+
+        <form method="post" style="padding-top: 8px;">
+            {% csrf_token %}
+            <input type="hidden" name="acao" value="criar_cliente">
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 14px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Nome / Razão Social *</label>
+                    <input type="text" name="nome" placeholder="Ex: Boutique Bella Donna" class="form-control" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Nome Fantasia / Contato</label>
+                    <input type="text" name="nome_fantasia" placeholder="Ex: Juliana Vendas" class="form-control">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label style="color: var(--wine-700); font-weight: 700;">TAG da Peça / Marca</label>
+                    <input type="text" name="tag" placeholder="Ex: Tag Bella Donna, Tag Própria..." class="form-control" style="border-color: var(--wine-300);">
+                    <small style="font-size: 10.5px; color: var(--text-muted);">Tag que vai ser colocada na peça</small>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>CPF / CNPJ</label>
+                    <input type="text" name="cpf_cnpj" placeholder="00.000.000/0000-00" class="form-control">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Telefone / WhatsApp</label>
+                    <input type="text" name="telefone" placeholder="(00) 90000-0000" class="form-control">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 2fr 1.5fr 1fr 2fr; gap: 14px; margin-bottom: 14px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>E-mail</label>
+                    <input type="email" name="email" placeholder="cliente@email.com" class="form-control">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Cidade</label>
+                    <input type="text" name="cidade" placeholder="Ex: Nova Friburgo" class="form-control">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>UF</label>
+                    <input type="text" name="uf" placeholder="RJ" maxlength="2" class="form-control" style="text-transform: uppercase;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Endereço Completo</label>
+                    <input type="text" name="endereco" placeholder="Rua, Número, Bairro..." class="form-control">
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label>Observações Comerciais</label>
+                <input type="text" name="observacoes" placeholder="Ex: Preferência por tecidos de poliamida, entregas via transportadora X..." class="form-control">
+            </div>
+
+            <div style="text-align: right; border-top: 1px solid var(--border-light); padding-top: 14px;">
+                <button type="submit" class="btn-primary" style="padding: 10px 24px;">Salvar Cliente</button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- 2. Barra de Busca -->
+    <div class="card" style="padding: 14px 20px; margin-bottom: 24px;">
+        <form method="get" style="display: flex; gap: 12px; align-items: center;">
+            <div style="flex: 1;">
+                <input type="text" name="q" value="{{ search }}" placeholder="Buscar cliente por nome, CNPJ/CPF, telefone ou cidade..." class="form-control" style="padding: 7px 12px; font-size: 13px;">
+            </div>
+            <button type="submit" class="btn-primary" style="padding: 7px 18px; font-size: 13px;">Buscar</button>
+            {% if search %}
+                <a href="{% url 'clientes' %}" class="btn-secondary" style="padding: 7px 14px; font-size: 12px;">Limpar</a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- 3. Tabela de Clientes -->
+    <div class="table-container">
+        <div class="table-header-box">
+            <h3>Clientes Cadastrados</h3>
+            <span class="table-count-badge">{{ clientes|length }} clientes</span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="min-width: 170px;">Cliente / Razão Social</th>
+                        <th style="min-width: 130px;">TAG da Peça</th>
+                        <th style="min-width: 140px;">Contato / WhatsApp</th>
+                        <th style="min-width: 130px;">Localização</th>
+                        <th style="min-width: 120px;">CPF / CNPJ</th>
+                        <th style="min-width: 90px;">Pedidos</th>
+                        <th style="min-width: 80px;">Status</th>
+                        {% if request.user.is_superuser %}
+                        <th style="text-align: right; min-width: 110px;">Ações</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in clientes %}
+                    <tr>
+                        <td>
+                            <strong style="color: var(--wine-800); font-size: 14px;">{{ c.nome }}</strong>
+                            {% if c.nome_fantasia %}
+                                <div style="font-size: 12px; color: var(--text-secondary);">{{ c.nome_fantasia }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if c.tag %}
+                                <span class="tag-pill" style="background: #FAF5F0; color: var(--wine-700); font-weight: 700; font-size: 11.5px; border: 1px solid var(--wine-200);">
+                                    🏷️ {{ c.tag }}
+                                </span>
+                            {% else %}
+                                <span style="color: #bbb; font-size: 12px;">Padrão</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if c.telefone %}
+                                <div style="font-weight: 600; color: var(--text-primary); font-size: 12.5px;">{{ c.telefone }}</div>
+                            {% endif %}
+                            {% if c.email %}
+                                <div style="font-size: 11.5px; color: var(--text-muted);">{{ c.email }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if c.cidade %}
+                                <div style="font-size: 12.5px; font-weight: 600; color: var(--text-primary);">{{ c.cidade }}/{{ c.uf }}</div>
+                            {% endif %}
+                            {% if c.endereco %}
+                                <div style="font-size: 11.5px; color: var(--text-muted);">{{ c.endereco|truncatechars:35 }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span style="font-size: 12px; color: var(--text-secondary);">{{ c.cpf_cnpj|default:"-" }}</span>
+                        </td>
+                        <td>
+                            <a href="{% url 'pedidos' %}?cliente={{ c.id }}" class="tag-pill" style="text-decoration: none; font-weight: 700;" title="Ver pedidos deste cliente">
+                                {{ c.total_pedidos }} pedidos
+                            </a>
+                        </td>
+                        <td>
+                            {% if c.ativo %}
+                                <span class="badge badge-success">Ativo</span>
+                            {% else %}
+                                <span class="badge badge-wine">Inativo</span>
+                            {% endif %}
+                        </td>
+                        {% if request.user.is_superuser %}
+                        <td style="text-align: right; white-space: nowrap;">
+                            <a href="{% url 'editar_cliente' c.id %}" class="btn-acao btn-editar">Editar</a>
+                            <a href="{% url 'excluir_cliente' c.id %}" class="btn-acao btn-excluir" onclick="return confirm('Deseja realmente excluir o cliente {{ c.nome }}?');">Excluir</a>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="{% if request.user.is_superuser %}7{% else %}6{% endif %}" class="empty-state">
+                            <p>Nenhum cliente cadastrado.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

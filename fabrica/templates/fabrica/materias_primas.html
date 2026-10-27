@@ -1,0 +1,560 @@
+{% extends 'fabrica/base.html' %}
+{% load static %}
+
+{% block title %}Matérias-Primas & Insumos - Disfarce{% endblock %}
+{% block breadcrumb %}Engenharia & Custos / Matérias-Primas & Insumos{% endblock %}
+{% block page_title %}Gestão de Matérias-Primas, Insumos & Recálculo Automático de Custos{% endblock %}
+
+{% block extra_head %}
+<style>
+    .mp-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+    .mp-kpi-card {
+        background: #FFFFFF;
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-md);
+        padding: 18px 20px;
+        box-shadow: var(--shadow-sm);
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        transition: transform 0.2s ease;
+    }
+    .mp-kpi-card:hover {
+        transform: translateY(-2px);
+    }
+    .mp-kpi-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: var(--radius-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .badge-grupo {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    .badge-tecido {
+        background: #FAF0E6;
+        color: var(--wine-800);
+        border: 1px solid #E8D3C5;
+    }
+    .badge-aviamento {
+        background: #FFF8E1;
+        color: #B78103;
+        border: 1px solid #FFE082;
+    }
+    .badge-acessorio {
+        background: #E8F4FD;
+        color: #1565C0;
+        border: 1px solid #BBDEFB;
+    }
+    .badge-geral {
+        background: #F3F4F6;
+        color: #4B5563;
+        border: 1px solid #E5E7EB;
+    }
+
+    .quick-price-form {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .quick-price-input {
+        width: 90px;
+        padding: 4px 8px;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--wine-900);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-sm);
+        text-align: right;
+    }
+    .quick-price-input:focus {
+        border-color: var(--wine-600);
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(107, 33, 50, 0.15);
+    }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(35, 25, 27, 0.55);
+        backdrop-filter: blur(2px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+    .modal-box {
+        background: #FFFFFF;
+        border-radius: var(--radius-lg);
+        width: 92%;
+        max-width: 580px;
+        max-height: 90vh;
+        overflow-y: auto;
+        padding: 24px 28px;
+        box-shadow: var(--shadow-xl);
+        position: relative;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 1200px;">
+
+    <!-- Aviso Informativo de Integração de Preço -->
+    <div style="background: #E8F6EE; border: 1px solid #BCE7CC; border-left: 4px solid #1E6E3C; border-radius: var(--radius-md); padding: 14px 18px; margin-bottom: 22px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 36px; height: 36px; border-radius: 50%; background: #CDEFD8; color: #1E6E3C; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+            </div>
+            <div>
+                <strong style="color: #1E6E3C; font-size: 14px; display: block;">Recálculo Automático de Preços Ativo</strong>
+                <span style="font-size: 12px; color: #2C5E3B;">
+                    Ao alterar o valor de qualquer matéria-prima (tecido, viés, elástico, renda), o sistema <strong>recalcula instantaneamente o custo de todos os modelos e peças</strong> que utilizam esse insumo.
+                </span>
+            </div>
+        </div>
+
+        {% if request.user.is_superuser %}
+        <form method="post" style="margin: 0;">
+            {% csrf_token %}
+            <input type="hidden" name="acao" value="recalcular_todos">
+            <button type="submit" class="btn-secondary" style="font-size: 12px; padding: 7px 14px; background: #FFFFFF; color: #1E6E3C; border-color: #BCE7CC; display: inline-flex; align-items: center; gap: 6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                </svg>
+                <span>Forçar Recálculo Geral</span>
+            </button>
+        </form>
+        {% endif %}
+    </div>
+
+    <!-- 1. KPIs das Matérias-Primas -->
+    <div class="mp-kpi-grid">
+        <div class="mp-kpi-card">
+            <div class="mp-kpi-icon" style="background: #FAF0E6; color: var(--wine-800);">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                </svg>
+            </div>
+            <div>
+                <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Total de Matérias-Primas</div>
+                <div style="font-size: 22px; font-weight: 800; color: var(--wine-900);">{{ total_mps }} itens</div>
+                <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 1px;">Ativas no sistema</div>
+            </div>
+        </div>
+
+        <div class="mp-kpi-card">
+            <div class="mp-kpi-icon" style="background: #FAF5F0; color: var(--wine-700);">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20.59 13.41-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+                </svg>
+            </div>
+            <div>
+                <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Tecidos & Malhas</div>
+                <div style="font-size: 22px; font-weight: 800; color: var(--wine-800);">{{ total_tecidos }} tipos</div>
+                <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 1px;">Suede, Renda, Romantic, Ribana</div>
+            </div>
+        </div>
+
+        <div class="mp-kpi-card">
+            <div class="mp-kpi-icon" style="background: #FFF8E1; color: #B78103;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+            </div>
+            <div>
+                <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Aviamentos & Acessórios</div>
+                <div style="font-size: 22px; font-weight: 800; color: #B78103;">{{ total_aviamentos }} itens</div>
+                <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 1px;">Viés, Alças, Bijus, Etiquetas</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Barra de Controle: Filtros, Busca e Cadastrar -->
+    <div class="card" style="margin-bottom: 24px; padding: 16px 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+            
+            <!-- Filtro de Grupo e Busca -->
+            <form method="get" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0; flex: 1;">
+                <div style="min-width: 170px;">
+                    <select name="grupo" class="form-control" onchange="this.form.submit()" style="font-size: 13px; font-weight: 600;">
+                        <option value="todos" {% if filtro_grupo == 'todos' %}selected{% endif %}>Todos os Grupos</option>
+                        {% for g in grupos %}
+                        <option value="{{ g }}" {% if filtro_grupo == g %}selected{% endif %}>{{ g }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div style="display: flex; gap: 8px; flex: 1; max-width: 380px;">
+                    <input type="text" name="q" value="{{ busca }}" placeholder="Buscar por matéria-prima, fornecedor..." class="form-control" style="font-size: 13px;">
+                    <button type="submit" class="btn-secondary" style="padding: 0 16px;">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                    </button>
+                    {% if busca or filtro_grupo != 'todos' %}
+                    <a href="{% url 'materias_primas' %}" class="btn-secondary" style="padding: 0 12px; font-size: 12px; display: inline-flex; align-items: center;" title="Limpar Filtros">✕</a>
+                    {% endif %}
+                </div>
+            </form>
+
+            {% if request.user.is_superuser %}
+            <!-- Botão Cadastrar Matéria-Prima -->
+            <button onclick="abrirModalCadastro()" class="btn-primary" style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; padding: 9px 18px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <span>Cadastrar Matéria-Prima</span>
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 3. Tabela de Matérias-Primas -->
+    <div class="table-container">
+        <div class="table-header-box" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <h3>Lista de Insumos & Matérias-Primas</h3>
+                <span class="table-count-badge">{{ materias_primas|length }} registros</span>
+            </div>
+            <div style="font-size: 12px; color: var(--text-muted);">
+                Edite o valor unitário para refletir o custo nos produtos em tempo real
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width: 120px;">Grupo</th>
+                        <th>Discriminação / Matéria-Prima</th>
+                        <th>Composição / Fornecedor</th>
+                        <th style="text-align: center; width: 70px;">Unid</th>
+                        <th style="width: 200px;">Preço Unitário (R$)</th>
+                        <th style="text-align: center; width: 140px;">Produtos que Usam</th>
+                        {% if request.user.is_superuser %}
+                        <th style="text-align: right; width: 110px;">Ações</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mp in materias_primas %}
+                    <tr>
+                        <!-- Grupo / Código -->
+                        <td>
+                            {% if mp.codigo == 'TECIDO' %}
+                                <span class="badge-grupo badge-tecido">{{ mp.codigo }}</span>
+                            {% elif mp.codigo == 'AVIAMENTO' %}
+                                <span class="badge-grupo badge-aviamento">{{ mp.codigo }}</span>
+                            {% elif mp.codigo == 'ACESSÓRIO' or mp.codigo == 'ACESSORIO' %}
+                                <span class="badge-grupo badge-acessorio">{{ mp.codigo }}</span>
+                            {% else %}
+                                <span class="badge-grupo badge-geral">{{ mp.codigo|default:"GERAL" }}</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Nome -->
+                        <td>
+                            <strong style="color: var(--wine-900); font-size: 13.5px;">{{ mp.nome }}</strong>
+                            {% if mp.gramatura and mp.gramatura > 0 %}
+                            <span style="font-size: 11px; color: var(--text-muted); display: block;">Gramatura: {{ mp.gramatura }} Kg/m²</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Composição e Fornecedor -->
+                        <td>
+                            <div style="font-size: 12.5px; color: var(--text-primary);">
+                                {{ mp.composicao|default:"—" }}
+                            </div>
+                            {% if mp.fornecedor %}
+                            <div style="font-size: 11.5px; color: var(--text-muted);">
+                                Fornecedor: {{ mp.fornecedor }}
+                            </div>
+                            {% endif %}
+                        </td>
+
+                        <!-- Unidade -->
+                        <td style="text-align: center;">
+                            <span style="font-weight: 700; font-size: 12px; background: #F3F4F6; padding: 2px 7px; border-radius: 4px; color: var(--text-primary);">
+                                {{ mp.unidade_medida }}
+                            </span>
+                        </td>
+
+                        <!-- Preço Unitário com Edição Rápida -->
+                        <td>
+                            {% if request.user.is_superuser %}
+                            <form method="post" class="quick-price-form">
+                                {% csrf_token %}
+                                <input type="hidden" name="acao" value="atualizar_preco_rapido">
+                                <input type="hidden" name="mp_id" value="{{ mp.id }}">
+                                <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">R$</span>
+                                <input type="number" step="0.0001" name="preco_unitario" value="{{ mp.preco_unitario|stringformat:'.4f' }}" class="quick-price-input" title="Altere o valor e clique em Salvar">
+                                <button type="submit" class="btn-secondary" style="padding: 4px 8px; font-size: 11px; height: 28px;" title="Atualiza o preço e recalcula os produtos">
+                                    Salvar
+                                </button>
+                            </form>
+                            {% else %}
+                            <strong style="color: var(--wine-900); font-size: 13.5px;">R$ {{ mp.preco_unitario|floatformat:4 }}</strong>
+                            {% endif %}
+                        </td>
+
+                        <!-- Produtos Impactados -->
+                        <td style="text-align: center;">
+                            {% if mp.produtos_count > 0 %}
+                            <button onclick="abrirModalProdutos('{{ mp.nome|escapejs }}', [{% for prod in mp.produtos_afetados %}{id: {{ prod.id }}, sku: '{{ prod.sku|escapejs }}', nome: '{{ prod.nome|escapejs }}', custo: '{{ prod.custo_materia_prima|floatformat:4 }}'}{% if not forloop.last %},{% endif %}{% endfor %}])" class="badge-maquina" style="cursor: pointer; background: #FAF0E6; color: var(--wine-900); border: 1px solid var(--border-light); font-weight: 700; font-size: 12px; padding: 4px 10px; border-radius: 12px;" title="Ver produtos que utilizam este insumo">
+                                🏷️ {{ mp.produtos_count }} produto(s)
+                            </button>
+                            {% else %}
+                            <span style="font-size: 11.5px; color: var(--text-muted);">Nenhum</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Ações -->
+                        {% if request.user.is_superuser %}
+                        <td style="text-align: right; white-space: nowrap;">
+                            <button onclick="abrirModalEdicao({{ mp.id }}, '{{ mp.nome|escapejs }}', '{{ mp.codigo|default:''|escapejs }}', '{{ mp.fornecedor|default:''|escapejs }}', '{{ mp.composicao|default:''|escapejs }}', '{{ mp.unidade_medida|escapejs }}', '{{ mp.preco_unitario|stringformat:'.4f' }}', '{{ mp.estoque_metros|stringformat:'.2f' }}')" class="btn-acao btn-editar" title="Editar dados da matéria-prima">
+                                Editar
+                            </button>
+                            <form method="post" style="display: inline;" onsubmit="return confirm('Deseja realmente excluir ou inativar a matéria-prima {{ mp.nome }}?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="acao" value="excluir">
+                                <input type="hidden" name="mp_id" value="{{ mp.id }}">
+                                <button type="submit" class="btn-acao btn-excluir" style="background: none; border: none; cursor: pointer;">
+                                    Excluir
+                                </button>
+                            </form>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="{% if request.user.is_superuser %}7{% else %}6{% endif %}" class="empty-state">
+                            <p>Nenhuma matéria-prima encontrada para os critérios selecionados.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- MODAL DE CADASTRO DE MATÉRIA-PRIMA -->
+<div id="modal-cadastro-mp" class="modal-overlay" onclick="if(event.target.id === 'modal-cadastro-mp') fecharModal('modal-cadastro-mp');">
+    <div class="modal-box">
+        <button onclick="fecharModal('modal-cadastro-mp')" style="position: absolute; top: 16px; right: 18px; background: none; border: none; font-size: 22px; color: var(--text-muted); cursor: pointer;">&times;</button>
+        <h3 style="color: var(--wine-900); font-size: 17px; font-weight: 800; margin: 0 0 16px 0;">Cadastrar Nova Matéria-Prima</h3>
+        
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="acao" value="cadastrar">
+
+            <div class="form-group">
+                <label>Discriminação / Nome da Matéria-Prima *</label>
+                <input type="text" name="nome" placeholder="Ex: SUEDE CANELADO, RENDA LISA, VIES 16..." class="form-control" required>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                    <label>Grupo / Tipo</label>
+                    <input type="text" name="codigo" placeholder="Ex: TECIDO, AVIAMENTO, ACESSÓRIO..." class="form-control" style="text-transform: uppercase;">
+                </div>
+                <div class="form-group">
+                    <label>Unidade de Medida *</label>
+                    <select name="unidade_medida" class="form-control" required>
+                        <option value="KG">KG (Quilograma)</option>
+                        <option value="M">M (Metro)</option>
+                        <option value="UN">UN / U (Unidade)</option>
+                        <option value="PR">PR (Par)</option>
+                        <option value="RL">RL (Rolo)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                    <label>Preço Unitário (R$) *</label>
+                    <input type="number" step="0.0001" name="preco_unitario" placeholder="0.0000" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Estoque Inicial</label>
+                    <input type="number" step="0.01" name="estoque_metros" placeholder="0.00" class="form-control">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                    <label>Fornecedor (Opcional)</label>
+                    <input type="text" name="fornecedor" placeholder="Nome do fornecedor" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Composição (Opcional)</label>
+                    <input type="text" name="composicao" placeholder="Ex: POLIESTER, POLIAMIDA..." class="form-control">
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; border-top: 1px solid var(--border-light); padding-top: 14px;">
+                <button type="button" class="btn-secondary" onclick="fecharModal('modal-cadastro-mp')">Cancelar</button>
+                <button type="submit" class="btn-primary">Salvar Matéria-Prima</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL DE EDIÇÃO DE MATÉRIA-PRIMA -->
+<div id="modal-edicao-mp" class="modal-overlay" onclick="if(event.target.id === 'modal-edicao-mp') fecharModal('modal-edicao-mp');">
+    <div class="modal-box">
+        <button onclick="fecharModal('modal-edicao-mp')" style="position: absolute; top: 16px; right: 18px; background: none; border: none; font-size: 22px; color: var(--text-muted); cursor: pointer;">&times;</button>
+        <h3 style="color: var(--wine-900); font-size: 17px; font-weight: 800; margin: 0 0 16px 0;">Editar Matéria-Prima</h3>
+        
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="acao" value="editar">
+            <input type="hidden" name="mp_id" id="edit_mp_id">
+
+            <div class="form-group">
+                <label>Discriminação / Nome *</label>
+                <input type="text" name="nome" id="edit_nome" class="form-control" required>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                    <label>Grupo / Tipo</label>
+                    <input type="text" name="codigo" id="edit_codigo" class="form-control" style="text-transform: uppercase;">
+                </div>
+                <div class="form-group">
+                    <label>Unidade de Medida *</label>
+                    <select name="unidade_medida" id="edit_unidade" class="form-control" required>
+                        <option value="KG">KG (Quilograma)</option>
+                        <option value="M">M (Metro)</option>
+                        <option value="UN">UN / U (Unidade)</option>
+                        <option value="PR">PR (Par)</option>
+                        <option value="RL">RL (Rolo)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                    <label>Preço Unitário (R$) *</label>
+                    <input type="number" step="0.0001" name="preco_unitario" id="edit_preco" class="form-control" required>
+                    <small style="color: #1E6E3C; font-size: 11px;">O custo de todos os modelos que usam este insumo será recalculado.</small>
+                </div>
+                <div class="form-group">
+                    <label>Estoque Atual</label>
+                    <input type="number" step="0.01" name="estoque_metros" id="edit_estoque" class="form-control">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                    <label>Fornecedor</label>
+                    <input type="text" name="fornecedor" id="edit_fornecedor" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Composição</label>
+                    <input type="text" name="composicao" id="edit_composicao" class="form-control">
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; border-top: 1px solid var(--border-light); padding-top: 14px;">
+                <button type="button" class="btn-secondary" onclick="fecharModal('modal-edicao-mp')">Cancelar</button>
+                <button type="submit" class="btn-primary">Atualizar e Recalcular Preços</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL DE PRODUTOS IMPACTADOS -->
+<div id="modal-produtos-impactados" class="modal-overlay" onclick="if(event.target.id === 'modal-produtos-impactados') fecharModal('modal-produtos-impactados');">
+    <div class="modal-box">
+        <button onclick="fecharModal('modal-produtos-impactados')" style="position: absolute; top: 16px; right: 18px; background: none; border: none; font-size: 22px; color: var(--text-muted); cursor: pointer;">&times;</button>
+        <h3 id="modal-produtos-titulo" style="color: var(--wine-900); font-size: 17px; font-weight: 800; margin: 0 0 6px 0;">Produtos que utilizam este insumo</h3>
+        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">
+            Qualquer alteração no valor desta matéria-prima atualiza automaticamente o custo dos produtos listados abaixo:
+        </p>
+        
+        <div id="modal-produtos-lista" style="max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+            <!-- Preenchido via JavaScript -->
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; margin-top: 18px; border-top: 1px solid var(--border-light); padding-top: 12px;">
+            <button type="button" class="btn-secondary" onclick="fecharModal('modal-produtos-impactados')">Fechar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function abrirModalCadastro() {
+        document.getElementById('modal-cadastro-mp').style.display = 'flex';
+    }
+
+    function abrirModalEdicao(id, nome, codigo, fornecedor, composicao, unidade, preco, estoque) {
+        document.getElementById('edit_mp_id').value = id;
+        document.getElementById('edit_nome').value = nome;
+        document.getElementById('edit_codigo').value = codigo;
+        document.getElementById('edit_fornecedor').value = fornecedor;
+        document.getElementById('edit_composicao').value = composicao;
+        document.getElementById('edit_unidade').value = unidade;
+        document.getElementById('edit_preco').value = parseFloat(preco).toFixed(4);
+        document.getElementById('edit_estoque').value = parseFloat(estoque).toFixed(2);
+        document.getElementById('modal-edicao-mp').style.display = 'flex';
+    }
+
+    function abrirModalProdutos(nomeMp, produtos) {
+        document.getElementById('modal-produtos-titulo').innerText = 'Modelos que usam: ' + nomeMp;
+        const listaDiv = document.getElementById('modal-produtos-lista');
+        listaDiv.innerHTML = '';
+
+        if (!produtos || produtos.length === 0) {
+            listaDiv.innerHTML = '<div style="color: var(--text-muted); font-size: 13px;">Nenhum produto cadastrado com este insumo.</div>';
+        } else {
+            produtos.forEach(p => {
+                const item = document.createElement('div');
+                item.style.cssText = 'background: #FAF9F7; border: 1px solid var(--border-light); border-radius: 6px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;';
+                item.innerHTML = `
+                    <div>
+                        <span style="font-family: monospace; font-weight: 700; color: var(--wine-800); font-size: 11.5px; background: white; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border-light);">${p.sku}</span>
+                        <strong style="color: var(--wine-900); font-size: 13px; margin-left: 6px;">${p.nome}</strong>
+                    </div>
+                    <div style="text-align: right;">
+                        <span style="font-size: 11px; color: var(--text-muted); display: block;">Custo MP Peça:</span>
+                        <strong style="color: #1E6E3C; font-size: 13px;">R$ ${p.custo}</strong>
+                    </div>
+                `;
+                listaDiv.appendChild(item);
+            });
+        }
+        document.getElementById('modal-produtos-impactados').style.display = 'flex';
+    }
+
+    function fecharModal(id) {
+        document.getElementById(id).style.display = 'none';
+    }
+</script>
+{% endblock %}

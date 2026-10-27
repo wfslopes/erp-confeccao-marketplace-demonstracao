@@ -1,0 +1,1284 @@
+{% extends 'fabrica/base.html' %}
+{% load static %}
+
+{% block title %}Marketplace & Ads - Disfarce Confecção{% endblock %}
+{% block breadcrumb %}Marketplace & Tráfego Pago{% endblock %}
+{% block page_title %}Painel de Vendas Multicanal (Shopee, Mercado Livre & TikTok Shop){% endblock %}
+
+{% block extra_head %}
+<!-- Chart.js para gráficos interativos de alta performance -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .canal-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: var(--radius-full);
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+    .canal-badge.shopee {
+        background-color: #FEF0EC;
+        color: #D33916;
+        border: 1px solid #FCD2C7;
+    }
+    .canal-badge.mercadolivre {
+        background-color: #EEF4FD;
+        color: #1754B5;
+        border: 1px solid #C8DCFA;
+    }
+    .canal-badge.tiktok {
+        background-color: #F0EEEE;
+        color: #1F191A;
+        border: 1px solid #D8D4D5;
+    }
+    
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: var(--radius-full);
+    }
+    .status-pill.online {
+        background-color: var(--status-success-bg);
+        color: var(--status-success-text);
+    }
+    .status-pill.online::before {
+        content: '';
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background-color: #1E6E3C;
+    }
+
+    .canal-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-lg);
+        padding: 18px 20px;
+        box-shadow: var(--shadow-sm);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 12px;
+        transition: var(--transition);
+    }
+    .canal-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    /* TABELA DE EXTRATO COMPACTA (100% VISÍVEL SEM SCROLLBAR HORIZONTAL) */
+    .extrato-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        text-align: left;
+        font-size: 12px;
+    }
+    .extrato-table th {
+        background-color: #FAF5F0;
+        color: var(--wine-700);
+        padding: 9px 8px;
+        font-weight: 700;
+        font-size: 10.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        border-bottom: 1px solid var(--border-light);
+        white-space: nowrap;
+    }
+    .extrato-table td {
+        padding: 8px 8px;
+        border-bottom: 1px solid var(--border-subtle);
+        color: var(--text-primary);
+        vertical-align: middle;
+        font-size: 12px;
+    }
+    .extrato-table tbody tr {
+        transition: background-color 0.12s ease;
+    }
+    .extrato-table tbody tr:hover {
+        background-color: #FAF6F2;
+    }
+    .extrato-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    <!-- SUBNAV TABS -->
+    <div style="display: flex; gap: 8px; margin-bottom: 22px; border-bottom: 1px solid var(--border-light); padding-bottom: 12px; flex-wrap: wrap;">
+        <a href="{% url 'marketplace_dashboard' %}" style="padding: 8px 18px; font-size: 13.5px; font-weight: 700; border-radius: var(--radius-md, 8px); text-decoration: none; background: var(--wine-700, #6F2E34); color: #FFFFFF;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 4px;">
+                <rect width="18" height="18" x="3" y="3" rx="2"/>
+                <path d="M3 9h18"/>
+                <path d="M9 21V9"/>
+            </svg>
+            Painel & Extrato de Vendas
+        </a>
+        <a href="{% url 'desempenho_produtos_marketplace' %}" style="padding: 8px 18px; font-size: 13.5px; font-weight: 600; border-radius: var(--radius-md, 8px); text-decoration: none; color: var(--text-secondary); background: var(--bg-surface); border: 1px solid var(--border-light);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 4px;">
+                <line x1="18" y1="20" x2="18" y2="10"/>
+                <line x1="12" y1="20" x2="12" y2="4"/>
+                <line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+            Desempenho dos Produtos (Marketplace)
+        </a>
+        <a href="{% url 'desempenho_fabrica_marketplace' %}" style="padding: 8px 18px; font-size: 13.5px; font-weight: 600; border-radius: var(--radius-md, 8px); text-decoration: none; color: var(--text-secondary); background: var(--bg-surface); border: 1px solid var(--border-light);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 4px;">
+                <path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/>
+            </svg>
+            Desempenho da Fábrica & Lucro Integrado
+        </a>
+        <a href="{% url 'produtos_marketplace' %}" style="padding: 8px 18px; font-size: 13.5px; font-weight: 600; border-radius: var(--radius-md, 8px); text-decoration: none; color: var(--text-secondary); background: var(--bg-surface); border: 1px solid var(--border-light);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 4px;">
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
+                <path d="M3 6h18"/>
+                <path d="M16 10a4 4 0 0 1-8 0"/>
+            </svg>
+            Produtos do Marketplace & Custos por Data
+        </a>
+    </div>
+
+    <!-- 1. CARDS DE CONEXÃO E CANAIS DE VENDA -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; margin-bottom: 24px;">
+        
+        <!-- Shopee -->
+        <div class="canal-card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <span class="canal-badge shopee">Shopee</span>
+                    <h3 style="font-size: 14px; font-weight: 700; color: var(--text-primary); margin-top: 6px;">Loja Oficial Shopee</h3>
+                </div>
+                <span class="status-pill online">Conectado</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid var(--border-subtle); padding-top: 10px; gap: 8px; flex-wrap: wrap;">
+                <div>
+                    <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Comissão Plataforma</div>
+                    <strong style="font-size: 13px; color: var(--text-primary);">14% + 6% Frete + R$ 4,50/item</strong>
+                </div>
+                <div style="display: flex; gap: 6px; align-items: center;">
+                    <button type="button" onclick="abrirModalPlanilha('shopee')" class="btn-primary" style="font-size: 11px; padding: 5px 11px; display: inline-flex; align-items: center; gap: 5px;" title="Enviar Planilha Mensal Shopee">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="17 8 12 3 7 8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                        <span>Enviar Planilha</span>
+                    </button>
+                    {% if request.user.is_superuser %}
+                    <a href="{% url 'sincronizar_marketplace' 'shopee' %}" class="btn-secondary" style="font-size: 11px; padding: 5px 8px;" title="Sincronizar Pedidos via API">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                        </svg>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Mercado Livre -->
+        <div class="canal-card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <span class="canal-badge mercadolivre">Mercado Livre</span>
+                    <h3 style="font-size: 14px; font-weight: 700; color: var(--text-primary); margin-top: 6px;">Mercado Livre Full</h3>
+                </div>
+                <span class="status-pill online">Conectado</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid var(--border-subtle); padding-top: 10px; gap: 8px; flex-wrap: wrap;">
+                <div>
+                    <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Comissão Plataforma</div>
+                    <strong style="font-size: 13px; color: var(--text-primary);">16% Clássico / 19% Premium</strong>
+                </div>
+                <div style="display: flex; gap: 6px; align-items: center;">
+                    <button type="button" onclick="abrirModalPlanilha('mercadolivre')" class="btn-primary" style="font-size: 11px; padding: 5px 11px; display: inline-flex; align-items: center; gap: 5px;" title="Enviar Planilha Mensal Mercado Livre">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="17 8 12 3 7 8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                        <span>Enviar Planilha</span>
+                    </button>
+                    {% if request.user.is_superuser %}
+                    <a href="{% url 'sincronizar_marketplace' 'mercadolivre' %}" class="btn-secondary" style="font-size: 11px; padding: 5px 8px;" title="Sincronizar Pedidos via API">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                        </svg>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- TikTok Shop -->
+        <div class="canal-card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <span class="canal-badge tiktok">TikTok Shop</span>
+                    <h3 style="font-size: 14px; font-weight: 700; color: var(--text-primary); margin-top: 6px;">TikTok Shop Brasil</h3>
+                </div>
+                <span class="status-pill online">Conectado</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid var(--border-subtle); padding-top: 10px; gap: 8px; flex-wrap: wrap;">
+                <div>
+                    <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Comissão Plataforma</div>
+                    <strong style="font-size: 12.5px; color: var(--text-primary);" title="10% para itens &lt; R$ 50 (taxa R$ 4,00) | 6% para itens &ge; R$ 50 (taxa R$ 6,00) + 6% Campanha de Frete">
+                        10% / 6% + R$ 4/6 por item + 6% Frete
+                    </strong>
+                </div>
+                <div style="display: flex; gap: 6px; align-items: center;">
+                    <button type="button" onclick="abrirModalPlanilha('tiktok')" class="btn-primary" style="font-size: 11px; padding: 5px 11px; display: inline-flex; align-items: center; gap: 5px;" title="Enviar Planilha Mensal TikTok Shop">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="17 8 12 3 7 8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                        <span>Enviar Planilha</span>
+                    </button>
+                    {% if request.user.is_superuser %}
+                    <a href="{% url 'sincronizar_marketplace' 'tiktok' %}" class="btn-secondary" style="font-size: 11px; padding: 5px 8px;" title="Sincronizar Pedidos via API">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                        </svg>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 2. BARRA DE FILTROS INTUITIVA -->
+    <div class="card" style="padding: 16px 20px; margin-bottom: 24px;">
+        <form method="get" style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
+            
+            <!-- Filtro Canal -->
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <label style="font-size: 12px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Canal:</label>
+                <select name="canal" class="form-control" style="width: 170px; padding: 7px 12px; font-size: 13px;" onchange="this.form.submit()">
+                    <option value="todos" {% if canal_filter == 'todos' %}selected{% endif %}>Todos os Canais</option>
+                    <option value="shopee" {% if canal_filter == 'shopee' %}selected{% endif %}>Shopee</option>
+                    <option value="mercadolivre" {% if canal_filter == 'mercadolivre' %}selected{% endif %}>Mercado Livre</option>
+                    <option value="tiktok" {% if canal_filter == 'tiktok' %}selected{% endif %}>TikTok Shop</option>
+                </select>
+            </div>
+
+            <!-- Filtro Período -->
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <label style="font-size: 12px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Período:</label>
+                <select name="periodo" class="form-control" style="width: 170px; padding: 7px 12px; font-size: 13px;" onchange="this.form.submit()">
+                    <option value="todos" {% if periodo_filter == 'todos' %}selected{% endif %}>Histórico Completo</option>
+                    <option value="90d" {% if periodo_filter == '90d' %}selected{% endif %}>Últimos 90 dias</option>
+                    <option value="30d" {% if periodo_filter == '30d' %}selected{% endif %}>Últimos 30 dias</option>
+                    <option value="mes" {% if periodo_filter == 'mes' %}selected{% endif %}>Este Mês</option>
+                    <option value="7d" {% if periodo_filter == '7d' %}selected{% endif %}>Últimos 7 dias</option>
+                </select>
+            </div>
+
+            <!-- Filtro Produto -->
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <label style="font-size: 12px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Produto:</label>
+                <select name="produto" class="form-control" style="width: 190px; padding: 7px 12px; font-size: 13px;" onchange="this.form.submit()">
+                    <option value="">Todos os Modelos</option>
+                    {% for p in produtos %}
+                        <option value="{{ p.id }}" {% if produto_id == p.id|stringformat:'i' %}selected{% endif %}>{{ p.sku }} - {{ p.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Busca por Pedido -->
+            <div style="flex: 1; min-width: 200px; display: flex; gap: 8px;">
+                <input type="text" name="q" value="{{ search }}" placeholder="Buscar por código de pedido ou SKU..." class="form-control" style="padding: 7px 12px; font-size: 13px;">
+                <button type="submit" class="btn-primary" style="padding: 7px 16px; font-size: 12.5px;">Filtrar</button>
+            </div>
+
+            <!-- Botão Limpar Filtros -->
+            {% if canal_filter != 'todos' or periodo_filter != '30d' or produto_id or search %}
+                <a href="{% url 'marketplace_dashboard' %}" class="btn-secondary" style="font-size: 12px; padding: 7px 12px;">Limpar</a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- 3. CARDS DE RESULTADO FINANCEIRO CONSOLIDADO (DRE DA OPERAÇÃO) -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 24px;">
+        
+        <!-- Faturamento Bruto (GMV) -->
+        <div class="stat-card">
+            <div class="stat-card-header">
+                <h4>Faturamento Bruto (GMV)</h4>
+                <div class="stat-card-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="8" cy="21" r="1"/>
+                        <circle cx="19" cy="21" r="1"/>
+                        <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="value">R$ {{ total_faturamento|floatformat:2 }}</div>
+            <div class="stat-desc">
+                <span class="tag-pill">{{ total_pedidos }} vendas</span>
+                <span>Ticket: <strong>R$ {{ ticket_medio|floatformat:2 }}</strong></span>
+            </div>
+        </div>
+
+        <!-- Líquido Liberado em Conta -->
+        <div class="stat-card">
+            <div class="stat-card-header">
+                <h4>Líquido Liberado</h4>
+                <div class="stat-card-icon green">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="1" x2="12" y2="23"/>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="value" style="color: #1E6E3C;">R$ {{ total_valor_liquido|floatformat:2 }}</div>
+            <div class="stat-desc">
+                <span class="tag-pill">Saldo Real em Conta</span>
+            </div>
+        </div>
+
+        <!-- Custo do Produto da Fábrica (CPV) -->
+        <div class="stat-card">
+            <div class="stat-card-header">
+                <h4>Custo Fábrica (CPV)</h4>
+                <div class="stat-card-icon amber">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="20" height="14" x="2" y="5" rx="2"/>
+                        <line x1="2" x2="22" y1="10" y2="10"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="value" style="color: var(--text-primary);">R$ {{ total_cpv|floatformat:2 }}</div>
+            <div class="stat-desc">
+                <span class="tag-pill">Matéria-Prima</span>
+            </div>
+        </div>
+
+        <!-- Taxas & Investimento em Ads -->
+        <div class="stat-card">
+            <div class="stat-card-header">
+                <h4>Taxas + Ads</h4>
+                <div class="stat-card-icon blue">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+                        <line x1="12" x2="12" y1="9" y2="13"/>
+                        <line x1="12" x2="12.01" y1="17" y2="17"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="value" style="font-size: 24px; color: #1F6296;">
+                R$ {{ total_taxas|floatformat:2 }}
+            </div>
+            <div class="stat-desc" style="margin-top: 4px;">
+                <span>Ads: <strong>R$ {{ total_ads|floatformat:2 }}</strong></span>
+                {% if total_ads > 0 %}<span class="tag-pill" style="margin-left: 4px;">ROAS: {{ roas_consolidado|floatformat:2 }}x</span>{% endif %}
+                {% if total_prejuizo_ads_cancelados > 0 %}
+                    <div style="font-size: 11px; color: #A32832; font-weight: 600; margin-top: 4px;">
+                        ⚠️ R$ {{ total_prejuizo_ads_cancelados|floatformat:2 }} CAC perdido em cancelamentos
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Lucro Líquido Real Consolidado -->
+        <div class="stat-card">
+            <div class="stat-card-header">
+                <h4>Lucro Líquido Real</h4>
+                <div class="stat-card-icon green">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="value" style="color: #1E6E3C;">R$ {{ total_lucro_liquido|floatformat:2 }}</div>
+            <div class="stat-desc">
+                <span class="badge badge-success" style="font-size: 11px;">Margem: {{ margem_liquida_consolidada|floatformat:1 }}%</span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 4. PAINEL DE GRÁFICOS VISUAIS (DRE GRÁFICO & COMPARATIVO POR CANAL) -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px;">
+        
+        <!-- Gráfico 1: Vendas e Lucro por Canal -->
+        <div class="card" style="margin-bottom: 0;">
+            <div class="card-header">
+                <h3>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" x2="18" y1="20" y2="10"/>
+                        <line x1="12" x2="12" y1="20" y2="4"/>
+                        <line x1="6" x2="6" y1="20" y2="14"/>
+                    </svg>
+                    Faturamento vs Lucro Líquido por Canal
+                </h3>
+            </div>
+            <div style="height: 260px; position: relative;">
+                <canvas id="chartCanais"></canvas>
+            </div>
+        </div>
+
+        <!-- Gráfico 2: Composição do Faturamento (Para onde vai o dinheiro da venda) -->
+        <div class="card" style="margin-bottom: 0;">
+            <div class="card-header">
+                <h3>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>
+                        <path d="M22 12A10 10 0 0 0 12 2v10z"/>
+                    </svg>
+                    Distribuição da Receita (DRE da Venda)
+                </h3>
+            </div>
+            <div style="height: 260px; position: relative;">
+                <canvas id="chartDRE"></canvas>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 5. TABELA DETALHADA DE VENDAS & DRE UNITÁRIO -->
+    <div class="table-container">
+        <div class="table-header-box">
+            <div>
+                <h3>Extrato de Vendas & Lucro Líquido Unitário</h3>
+                <span class="table-count-badge" style="margin-top: 4px; display: inline-block;">{{ total_vendas_geral }} vendas &bull; Página {{ vendas.number }} de {{ vendas.paginator.num_pages }} (20 por página)</span>
+            </div>
+            
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <button type="button" onclick="abrirModalPlanilha('shopee')" class="btn-secondary" style="padding: 8px 14px; font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    <span>Importar Planilha</span>
+                </button>
+
+                {% if request.user.is_superuser %}
+                <!-- Botão para Abrir Formulário de Nova Venda -->
+                <button onclick="document.getElementById('form-nova-venda').style.display = (document.getElementById('form-nova-venda').style.display === 'block') ? 'none' : 'block';" class="btn-primary" style="padding: 8px 16px; font-size: 12.5px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span>Lançar Venda Manual</span>
+                </button>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if request.user.is_superuser %}
+        <!-- Gaveta para Cadastro de Venda -->
+        <div id="form-nova-venda" style="display: none; background: #FAF6F2; padding: 22px 24px; border-bottom: 2px solid var(--wine-200);">
+            <h4 style="color: var(--wine-700); font-size: 13px; text-transform: uppercase; font-weight: 700; margin-bottom: 14px; letter-spacing: 0.5px;">
+                Registrar Venda do Marketplace
+            </h4>
+            <form action="{% url 'adicionar_venda_marketplace' %}" method="post">
+                {% csrf_token %}
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 14px;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Código do Pedido</label>
+                        <input type="text" name="codigo_pedido" placeholder="Ex: SHP-983120 (ou deixe em branco para gerar)" class="form-control">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Canal *</label>
+                        <select name="canal" class="form-control" required>
+                            <option value="shopee">Shopee</option>
+                            <option value="mercadolivre">Mercado Livre</option>
+                            <option value="tiktok">TikTok Shop</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Produto / SKU *</label>
+                        <select name="produto" class="form-control" required>
+                            <option value="">Selecione o produto...</option>
+                            {% for prod in produtos %}
+                                <option value="{{ prod.id }}">{{ prod.sku }} - {{ prod.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Quantidade *</label>
+                        <input type="number" name="quantidade" value="1" min="1" class="form-control" required>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Valor Bruto Venda (R$) *</label>
+                        <input type="number" step="0.01" name="valor_bruto_venda" placeholder="Ex: 89.90" class="form-control" required>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 16px;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Custo Unit. Produto (R$)</label>
+                        <input type="number" step="0.01" name="custo_produto_unitario" placeholder="Auto da Fábrica se vazio" class="form-control" title="Se deixar vazio, busca o custo de matéria-prima cadastrado">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Comissão Plataforma (R$)</label>
+                        <input type="number" step="0.01" name="taxa_comissao_marketplace" placeholder="Auto da conta se vazio" class="form-control">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Taxa Fixa / Item (R$)</label>
+                        <input type="number" step="0.01" name="taxa_fixa_marketplace" placeholder="Ex: 4.50" class="form-control">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Ads Atribuído (R$)</label>
+                        <input type="number" step="0.01" name="custo_ads_atribuido" placeholder="Ex: 6.50" class="form-control">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Campanha de Ads</label>
+                        <select name="campanha_ads" class="form-control">
+                            <option value="">Nenhuma / Orgânico</option>
+                            {% for c in campanhas %}
+                                <option value="{{ c.id }}">{{ c.nome_campanha }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div style="text-align: right;">
+                    <button type="submit" class="btn-primary" style="padding: 9px 24px;">Salvar Venda e Calcular Lucro</button>
+                </div>
+            </form>
+        </div>
+        {% endif %}
+
+        <div class="table-responsive" style="overflow-x: auto;">
+            <table class="extrato-table">
+                <thead>
+                    <tr>
+                        <th style="min-width: 140px;">Pedido & Data</th>
+                        <th style="min-width: 180px;">Produto / Variação</th>
+                        <th style="text-align: right; min-width: 85px;">Preço Venda</th>
+                        <th style="text-align: right; min-width: 90px;">Taxas Retidas</th>
+                        <th style="text-align: right; min-width: 90px;">Líq. Liberado</th>
+                        <th style="text-align: right; min-width: 95px;">Custo Fábrica</th>
+                        <th style="text-align: right; min-width: 105px;">Lucro & Margem</th>
+                        <th style="text-align: center; min-width: 105px;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for v in vendas %}
+                    <tr>
+                        <td>
+                            <strong style="color: var(--text-primary); font-size: 12.5px; font-family: monospace;">{{ v.numero_pedido|default:v.codigo_pedido }}</strong>
+                            <div style="display: flex; align-items: center; gap: 5px; margin-top: 2px;">
+                                <span class="canal-badge {{ v.canal }}" style="padding: 1px 6px; font-size: 9.5px;">{{ v.get_canal_display }}</span>
+                                <span style="font-size: 11px; color: var(--text-secondary); font-weight: 500;">{{ v.data_venda|date:"d/m/Y" }}</span>
+                            </div>
+                            {% if v.comprador %}
+                                <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 1px;" title="Comprador: {{ v.comprador }}">{{ v.comprador|truncatechars:18 }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 2px;">
+                                {% if v.produto_marketplace %}
+                                    <strong style="color: var(--wine-700); font-size: 12px; font-family: monospace;">{{ v.produto_marketplace.sku_marketplace }}</strong>
+                                {% elif v.produto %}
+                                    <strong style="color: var(--wine-700); font-size: 12px; font-family: monospace;">{{ v.produto.sku }}</strong>
+                                {% else %}
+                                    <strong style="color: var(--wine-700); font-size: 12px; font-family: monospace;">{{ v.sku_marketplace|default:"Sem SKU" }}</strong>
+                                {% endif %}
+
+                                <form method="post" action="{% url 'alterar_kit_venda_marketplace' v.id %}" style="display: inline-flex; align-items: center; margin: 0;">
+                                    {% csrf_token %}
+                                    <select name="quantidade_pecas_kit" onchange="this.form.submit()" style="font-size: 10px; font-weight: 700; padding: 1px 4px; border-radius: 4px; background: {% if v.quantidade_pecas_kit > 1 %}#FAF2E8{% else %}#F0F3F6{% endif %}; color: {% if v.quantidade_pecas_kit > 1 %}#9E5B00{% else %}#4A5568{% endif %}; border: 1px solid {% if v.quantidade_pecas_kit > 1 %}#F3D8B0{% else %}#D8DEE4{% endif %}; cursor: pointer;" title="Alterar quantidade de peças/kit deste pedido">
+                                        <option value="1" {% if v.quantidade_pecas_kit == 1 %}selected{% endif %}>1 un</option>
+                                        <option value="2" {% if v.quantidade_pecas_kit == 2 %}selected{% endif %}>Kit 2</option>
+                                        <option value="3" {% if v.quantidade_pecas_kit == 3 %}selected{% endif %}>Kit 3</option>
+                                        <option value="4" {% if v.quantidade_pecas_kit == 4 %}selected{% endif %}>Kit 4</option>
+                                        <option value="5" {% if v.quantidade_pecas_kit == 5 %}selected{% endif %}>Kit 5</option>
+                                        <option value="6" {% if v.quantidade_pecas_kit == 6 %}selected{% endif %}>Kit 6</option>
+                                        <option value="10" {% if v.quantidade_pecas_kit == 10 %}selected{% endif %}>Kit 10</option>
+                                    </select>
+                                </form>
+                            </div>
+                            <div style="font-size: 11.5px; color: var(--text-muted); line-height: 1.25; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{% if v.nome_produto_marketplace %}{{ v.nome_produto_marketplace }}{% elif v.produto %}{{ v.produto.nome }}{% endif %}">
+                                {% if v.nome_produto_marketplace %}
+                                    {{ v.nome_produto_marketplace }}
+                                {% elif v.produto %}
+                                    {{ v.produto.nome }}
+                                {% else %}
+                                    Item Marketplace
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td style="text-align: right; white-space: nowrap;">
+                            <strong style="color: var(--text-primary); font-size: 12.5px;">R$ {{ v.valor_bruto_venda|floatformat:2 }}</strong>
+                        </td>
+                        <td style="text-align: right; white-space: nowrap;">
+                            <span style="color: #A32832; font-size: 12px; font-weight: 500;" title="Comissão: {{ v.taxa_comissao_marketplace|floatformat:2 }} | Serviço: {{ v.taxa_servico_marketplace|floatformat:2 }} | Devolução: {{ v.taxa_devolucao_facil|floatformat:2 }}">
+                                - R$ {{ v.total_taxas_marketplace|floatformat:2 }}
+                            </span>
+                        </td>
+                        <td style="text-align: right; white-space: nowrap;">
+                            <strong style="color: #1E6E3C; font-size: 12.5px;">
+                                R$ {{ v.valor_liquido_liberado|floatformat:2 }}
+                            </strong>
+                        </td>
+                        <td style="text-align: right; white-space: nowrap;">
+                            <strong style="color: var(--text-primary); font-size: 12.5px;">R$ {{ v.custo_produto_total|floatformat:2 }}</strong>
+                            {% if v.custo_produto_unitario > 0 %}
+                                <div style="font-size: 10.5px; color: var(--text-muted);">
+                                    {{ v.quantidade_pecas_kit }}x R$ {{ v.custo_produto_unitario|floatformat:2 }}
+                                </div>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: right; white-space: nowrap;">
+                            <strong style="font-size: 13px; color: {% if v.lucro_liquido > 0 %}#1E6E3C{% elif v.lucro_liquido < 0 %}#A32832{% else %}#666{% endif %};">
+                                R$ {{ v.lucro_liquido|floatformat:2 }}
+                            </strong>
+                            <div style="margin-top: 2px;">
+                                <span class="badge {% if v.margem_liquida_pct >= 15 %}badge-success{% elif v.margem_liquida_pct > 0 %}badge-warning{% else %}badge-danger{% endif %}" style="font-size: 10px; padding: 2px 5px; font-weight: 700;">
+                                    {{ v.margem_liquida_pct|floatformat:1 }}%
+                                </span>
+                            </div>
+                        </td>
+                        <td style="text-align: center; white-space: nowrap;">
+                            {% if v.status == 'cancelado' %}
+                                <span class="tag-pill" style="background: #FCE8E6; color: #A32832; font-weight: 700; font-size: 10px; padding: 2px 7px;">Cancelado</span>
+                                {% if v.custo_ads_pedido_perdido > 0 %}
+                                    <div style="font-size: 10px; color: #A32832; font-weight: 700; margin-top: 2px;">
+                                        - R$ {{ v.custo_ads_pedido_perdido|floatformat:2 }}
+                                    </div>
+                                {% endif %}
+                            {% else %}
+                                <span class="tag-pill" style="font-size: 10px; padding: 2px 7px;">{{ v.get_status_display }}</span>
+                            {% endif %}
+                            {% if v.metodo_pagamento %}
+                                <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">{{ v.metodo_pagamento|truncatechars:14 }}</div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="empty-state">
+                            <p>Nenhuma venda encontrada com os filtros selecionados.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- PAGINAÇÃO DO EXTRATO DE VENDAS (20 POR PÁGINA) -->
+        {% if vendas.paginator.num_pages > 1 %}
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-top: 1px solid var(--border-light); background: var(--bg-surface); flex-wrap: wrap; gap: 12px;">
+            <div style="font-size: 13px; color: var(--text-secondary);">
+                Exibindo vendas <strong>{{ vendas.start_index }}</strong> a <strong>{{ vendas.end_index }}</strong> de <strong>{{ total_vendas_geral }}</strong> no total
+            </div>
+
+            <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                {% if vendas.has_previous %}
+                    <a href="?page=1&canal={{ canal_filter }}&periodo={{ periodo_filter }}&produto={{ produto_id }}&q={{ search }}" class="btn-secondary" style="padding: 5px 10px; font-size: 12px;" title="Primeira Página">&laquo; Primeira</a>
+                    <a href="?page={{ vendas.previous_page_number }}&canal={{ canal_filter }}&periodo={{ periodo_filter }}&produto={{ produto_id }}&q={{ search }}" class="btn-secondary" style="padding: 5px 12px; font-size: 12px;">&lsaquo; Anterior</a>
+                {% endif %}
+
+                <!-- Números das páginas próximas -->
+                {% for num in vendas.paginator.page_range %}
+                    {% if num >= vendas.number|add:"-2" and num <= vendas.number|add:"2" %}
+                        {% if num == vendas.number %}
+                            <span style="padding: 5px 12px; background: var(--wine-700, #6F2E34); color: #FFFFFF; font-weight: 700; font-size: 12.5px; border-radius: var(--radius-sm, 6px);">
+                                {{ num }}
+                            </span>
+                        {% else %}
+                            <a href="?page={{ num }}&canal={{ canal_filter }}&periodo={{ periodo_filter }}&produto={{ produto_id }}&q={{ search }}" class="btn-secondary" style="padding: 5px 11px; font-size: 12px;">
+                                {{ num }}
+                            </a>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+
+                {% if vendas.has_next %}
+                    <a href="?page={{ vendas.next_page_number }}&canal={{ canal_filter }}&periodo={{ periodo_filter }}&produto={{ produto_id }}&q={{ search }}" class="btn-secondary" style="padding: 5px 12px; font-size: 12px;">Próxima &rsaquo;</a>
+                    <a href="?page={{ vendas.paginator.num_pages }}&canal={{ canal_filter }}&periodo={{ periodo_filter }}&produto={{ produto_id }}&q={{ search }}" class="btn-secondary" style="padding: 5px 10px; font-size: 12px;" title="Última Página">Última &raquo;</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+
+    <!-- 6. GESTÃO DE ADS, ROAS & DISTRIBUIÇÃO POR CONVERSÃO -->
+    <div class="card" style="margin-bottom: 28px;">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div>
+                <h3>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 20h9"/>
+                        <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+                    </svg>
+                    Controle de Campanhas de Ads & Distribuição de ROAS
+                </h3>
+                <p style="font-size: 12.5px; color: var(--text-muted); margin-top: 4px;">
+                    Lance os gastos de anúncios ou importe a planilha oficial do Shopee Ads ou TikTok Ads (.csv) para calcular CAC e prejuízo de pedidos cancelados.
+                </p>
+            </div>
+            <button type="button" onclick="abrirModalAds('shopee')" class="btn-primary" style="padding: 7px 16px; font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <span>Importar Relatório de Ads (.csv)</span>
+            </button>
+        </div>
+
+        {% if request.user.is_superuser %}
+        <!-- Formulário para Lançar Campanha de Ads -->
+        <form action="{% url 'adicionar_campanha_ads' %}" method="post" style="background: var(--bg-subtle); padding: 18px 20px; border-radius: var(--radius-md); border: 1px solid var(--border-light); margin-bottom: 20px;">
+            {% csrf_token %}
+            <div style="display: grid; grid-template-columns: 1fr 2fr 1fr 1fr 1fr auto; gap: 12px; align-items: flex-end;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Canal de Ads *</label>
+                    <select name="canal" class="form-control" required>
+                        <option value="shopee">Shopee Ads</option>
+                        <option value="mercadolivre">Mercado Livre Ads</option>
+                        <option value="tiktok">TikTok Ads</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Nome da Campanha *</label>
+                    <input type="text" name="nome_campanha" placeholder="Ex: Escala Conjunto Renda - TikTok" class="form-control" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Investimento (R$) *</label>
+                    <input type="number" step="0.01" name="valor_investido" placeholder="R$ 350.00" class="form-control" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Receita Gerada (R$)</label>
+                    <input type="number" step="0.01" name="receita_atribuida" placeholder="R$ 1800.00" class="form-control">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Conversões (Qtd)</label>
+                    <input type="number" name="conversoes" placeholder="Qtd Pedidos" class="form-control">
+                </div>
+
+                <div>
+                    <button type="submit" class="btn-primary" style="height: 42px; white-space: nowrap; padding: 0 18px;">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        <span>Salvar Campanha</span>
+                    </button>
+                </div>
+            </div>
+        </form>
+        {% endif %}
+
+        <!-- Tabela de Campanhas com Distribuição -->
+        <div class="table-responsive" style="border: 1px solid var(--border-light); border-radius: var(--radius-sm); overflow: hidden;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Canal</th>
+                        <th>Campanha</th>
+                        <th>Investimento Total</th>
+                        <th>Receita Atribuída</th>
+                        <th>Conversões</th>
+                        <th>ROAS Real</th>
+                        <th>Custo / Conversão (CAC)</th>
+                        {% if request.user.is_superuser %}
+                        <th style="text-align: right;">Ação de Rateio</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for camp in campanhas %}
+                    <tr>
+                        <td>
+                            <span class="canal-badge {{ camp.canal }}">{{ camp.get_canal_display }}</span>
+                        </td>
+                        <td>
+                            <strong style="color: var(--text-primary); font-size: 13.5px;">{{ camp.nome_campanha }}</strong>
+                        </td>
+                        <td>
+                            <strong style="color: var(--wine-700);">R$ {{ camp.valor_investido|floatformat:2 }}</strong>
+                        </td>
+                        <td>
+                            R$ {{ camp.receita_atribuida|floatformat:2 }}
+                        </td>
+                        <td>
+                            <span class="tag-pill">{{ camp.conversoes }} pedidos</span>
+                        </td>
+                        <td>
+                            <strong style="color: #1E6E3C; font-size: 13px;">{{ camp.roas_real|floatformat:2 }}x</strong>
+                        </td>
+                        <td>
+                            <span style="color: var(--text-secondary); font-size: 12.5px;">R$ {{ camp.custo_por_conversao|floatformat:2 }} / venda</span>
+                        </td>
+                        {% if request.user.is_superuser %}
+                        <td style="text-align: right; white-space: nowrap;">
+                            <form action="{% url 'distribuir_ads_vendas' camp.id %}" method="post" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-secondary" style="font-size: 11px; padding: 4px 10px;" title="Distribuir proporcionalmente o custo deste Ads nas vendas vinculadas">
+                                    Distribuir nas Vendas &rarr;
+                                </button>
+                            </form>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="{% if request.user.is_superuser %}8{% else %}7{% endif %}" class="empty-state" style="padding: 24px;">
+                            <p>Nenhuma campanha de tráfego pago cadastrada ainda. Utilize o formulário acima para registrar campanhas da Shopee Ads, Mercado Livre Ads e TikTok Ads.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <!-- 7. HISTÓRICO DE PLANILHAS DE FATURAMENTO ENVIADAS -->
+    <div class="card" style="margin-bottom: 28px;">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div>
+                <h3 style="display: flex; align-items: center; gap: 8px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--wine-700);">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                        <polyline points="10 9 9 9 8 9"/>
+                    </svg>
+                    Histórico de Planilhas de Faturamento (Conciliação Mensal)
+                </h3>
+                <p style="font-size: 12.5px; color: var(--text-muted); margin-top: 4px;">
+                    Planilhas mensais processadas com verificação automática de duplicidade (pedidos sobrepostos são desconsiderados).
+                </p>
+            </div>
+            <button type="button" onclick="abrirModalPlanilha('shopee')" class="btn-primary" style="padding: 7px 16px; font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <span>Enviar Nova Planilha</span>
+            </button>
+        </div>
+
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Data de Envio</th>
+                        <th>Canal</th>
+                        <th>Arquivo</th>
+                        <th>Período Analisado</th>
+                        <th>Novos / Ignorados</th>
+                        <th>Faturamento Bruto</th>
+                        <th>Taxas Retidas</th>
+                        <th>Líquido Liberado</th>
+                        <th>Lucro Líquido Real</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for imp in importacoes %}
+                    <tr>
+                        <td>
+                            <strong style="color: var(--text-primary); font-size: 13px;">{{ imp.data_importacao|date:"d/m/Y H:i" }}</strong>
+                            {% if imp.usuario %}
+                            <div style="font-size: 11px; color: var(--text-muted);">Por: {{ imp.usuario.get_full_name|default:imp.usuario.username }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="canal-badge {{ imp.canal }}">{{ imp.get_canal_display }}</span>
+                        </td>
+                        <td>
+                            <div style="max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; font-weight: 500;" title="{{ imp.nome_arquivo }}">
+                                {{ imp.nome_arquivo }}
+                            </div>
+                        </td>
+                        <td>
+                            {% if imp.periodo_de and imp.periodo_ate %}
+                                <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">{{ imp.periodo_de|date:"d/m/Y" }} a {{ imp.periodo_ate|date:"d/m/Y" }}</span>
+                            {% else %}
+                                <span style="font-size: 12px; color: var(--text-muted);">Completo</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <strong style="color: #1E6E3C; font-size: 13px;">+{{ imp.total_novos }} incluídos</strong>
+                            {% if imp.total_duplicados > 0 %}
+                            <div style="font-size: 11px; color: #8C7E81;">{{ imp.total_duplicados }} duplicados ignorados</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <strong style="font-size: 13px; color: var(--text-primary);">R$ {{ imp.receita_bruta_total|floatformat:2 }}</strong>
+                        </td>
+                        <td>
+                            <span style="font-size: 12.5px; color: #A32832;">- R$ {{ imp.taxas_total|floatformat:2 }}</span>
+                        </td>
+                        <td>
+                            <strong style="font-size: 13.5px; color: #1E6E3C;">R$ {{ imp.valor_liquido_total|floatformat:2 }}</strong>
+                        </td>
+                        <td>
+                            <strong style="font-size: 13.5px; color: var(--wine-700);">R$ {{ imp.lucro_liquido_total|floatformat:2 }}</strong>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="empty-state" style="padding: 24px;">
+                            <p>Nenhuma planilha enviada ainda. Clique em <strong>"Enviar Planilha"</strong> em qualquer loja acima para importar seu faturamento.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <!-- MODAL DE IMPORTAÇÃO DE PLANILHA DE FATURAMENTO MENSAL -->
+    <div id="modal-importar-planilha" style="display: none; position: fixed; inset: 0; background: rgba(18, 14, 15, 0.65); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(2px);">
+        <div style="background: var(--bg-surface, #FFFFFF); border-radius: 12px; width: 95%; max-width: 540px; padding: 26px; box-shadow: 0 20px 40px rgba(0,0,0,0.22); position: relative; border: 1px solid var(--border-light, #EFE8DF);">
+            <!-- Fechar Modal -->
+            <button type="button" onclick="fecharModalPlanilha()" style="position: absolute; top: 18px; right: 18px; background: none; border: none; font-size: 24px; line-height: 1; cursor: pointer; color: var(--text-muted, #8C7E81);">&times;</button>
+            
+            <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 20px;">
+                <div id="modal_canal_icon" style="width: 44px; height: 44px; border-radius: 10px; background: #FEF0EC; display: flex; align-items: center; justify-content: center; color: #D33916;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="12" y1="18" x2="12" y2="12"/>
+                        <line x1="9" y1="15" x2="15" y2="15"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 style="margin: 0; font-size: 17px; font-weight: 700; color: var(--text-primary, #1A1315);">Importar Planilha de Faturamento</h3>
+                    <p style="margin: 2px 0 0 0; font-size: 12.5px; color: var(--text-muted, #8C7E81);">Envio mensal para conciliação financeira e cálculo de lucro real</p>
+                </div>
+            </div>
+
+            <form action="{% url 'importar_planilha_marketplace' %}" method="post" enctype="multipart/form-data" id="formPlanilhaMarketplace">
+                {% csrf_token %}
+                
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label style="font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; display: block; margin-bottom: 6px; color: var(--text-secondary, #574B4E);">Loja / Canal de Venda *</label>
+                    <select name="canal" id="modal_canal_select" class="form-control" style="width: 100%; padding: 9px 12px; font-size: 13.5px;" required onchange="atualizarIconeCanal(this.value)">
+                        <option value="shopee">Shopee (Relatório de Rendimento / Order Income .xlsx ou .csv)</option>
+                        <option value="tiktok">TikTok Shop (Relatório de Settlement / Faturamento)</option>
+                        <option value="mercadolivre">Mercado Livre (Relatório de Faturamento / Payout)</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 18px;">
+                    <label style="font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; display: block; margin-bottom: 6px; color: var(--text-secondary, #574B4E);">Arquivo da Planilha (.xlsx, .xls, .xlsm ou .csv) *</label>
+                    <div id="drop_area_planilha" style="border: 2px dashed var(--wine-300, #C2969B); border-radius: 10px; padding: 22px 18px; text-align: center; background: #FAF6F2; cursor: pointer; transition: all 0.2s ease;" onclick="document.getElementById('input_arquivo_planilha').click();">
+                        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color: var(--wine-700, #6F2E34); margin-bottom: 8px;">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="17 8 12 3 7 8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                        <div id="nome_arquivo_selecionado" style="font-size: 13.5px; font-weight: 700; color: var(--text-primary, #1A1315);">Clique aqui para selecionar o arquivo da planilha</div>
+                        <div style="font-size: 11.5px; color: var(--text-muted, #8C7E81); margin-top: 4px;">Suporta o relatório baixado direto do painel financeiro do marketplace</div>
+                    </div>
+                    <input type="file" name="arquivo_planilha" id="input_arquivo_planilha" accept=".xlsx,.xls,.xlsm,.csv" style="display: none;" required onchange="atualizarNomeArquivo(this)">
+                </div>
+
+                <div style="background: #EEF4FD; border-left: 4px solid #1754B5; padding: 12px 14px; border-radius: 6px; font-size: 12px; color: #1754B5; margin-bottom: 22px; line-height: 1.5;">
+                    <div style="font-weight: 700; margin-bottom: 2px;">&#10004; Proteção Anti-Duplicidade Ativa</div>
+                    Se houver pedidos que já foram importados no mês anterior ou em outro arquivo, o sistema detecta pelo código do pedido e os desconsidera automaticamente.
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" onclick="fecharModalPlanilha()" class="btn-secondary" style="padding: 9px 18px; font-size: 13px;">Cancelar</button>
+                    <button type="submit" id="btn_submeter_planilha" class="btn-primary" style="padding: 9px 24px; font-size: 13px; display: inline-flex; align-items: center; gap: 7px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="16 16 12 12 8 16"/>
+                            <line x1="12" y1="12" x2="12" y2="21"/>
+                            <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+                            <polyline points="16 16 12 12 8 16"/>
+                        </svg>
+                        <span>Processar e Incluir Dados</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+    </div>
+
+    <!-- MODAL DE IMPORTAÇÃO DE RELATÓRIO DE ADS -->
+    <div id="modal-importar-ads" style="display: none; position: fixed; inset: 0; background: rgba(18, 14, 15, 0.65); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(2px);">
+        <div style="background: var(--bg-surface, #FFFFFF); border-radius: 12px; width: 95%; max-width: 520px; padding: 26px; box-shadow: 0 20px 40px rgba(0,0,0,0.22); position: relative; border: 1px solid var(--border-light, #EFE8DF);">
+            <button type="button" onclick="fecharModalAds()" style="position: absolute; top: 18px; right: 18px; background: none; border: none; font-size: 24px; line-height: 1; cursor: pointer; color: var(--text-muted);">&times;</button>
+            
+            <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 20px;">
+                <div style="width: 44px; height: 44px; border-radius: 10px; background: #EEF4FD; display: flex; align-items: center; justify-content: center; color: #1754B5;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>
+                        <path d="M22 12A10 10 0 0 0 12 2v10z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 style="margin: 0; font-size: 17px; font-weight: 700; color: var(--text-primary);">Importar Relatório de Ads</h3>
+                    <p style="margin: 2px 0 0 0; font-size: 12.5px; color: var(--text-muted);">Calcula o CAC real por produto e contabiliza prejuízos de cancelamento</p>
+                </div>
+            </div>
+
+            <form action="{% url 'importar_planilha_ads' %}" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label style="font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; display: block; margin-bottom: 6px; color: var(--text-secondary);">Canal de Anúncios *</label>
+                    <select name="canal" class="form-control" style="width: 100%; padding: 9px 12px; font-size: 13.5px;" required>
+                        <option value="shopee">Shopee Ads (Product-Ads-Keyword-Placement-Level-Data .csv)</option>
+                        <option value="tiktok">TikTok Ads Manager (.csv)</option>
+                        <option value="mercadolivre">Mercado Livre Ads (.csv)</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 18px;">
+                    <label style="font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; display: block; margin-bottom: 6px; color: var(--text-secondary);">Arquivo do Relatório (.csv ou .xlsx) *</label>
+                    <div id="drop_area_ads" style="border: 2px dashed #1754B5; border-radius: 10px; padding: 22px 18px; text-align: center; background: #EEF4FD; cursor: pointer; transition: all 0.2s ease;" onclick="document.getElementById('input_arquivo_ads').click();">
+                        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color: #1754B5; margin-bottom: 8px;">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="17 8 12 3 7 8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                        <div id="nome_arquivo_ads_selecionado" style="font-size: 13.5px; font-weight: 700; color: #1754B5;">Clique aqui para selecionar o arquivo exportado de Ads (.csv ou .xlsx)</div>
+                        <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 4px;">Arquivo oficial exportado da Central de Marketing Shopee ou TikTok Ads Manager</div>
+                    </div>
+                    <input type="file" name="arquivo_ads" id="input_arquivo_ads" accept=".csv,.xlsx,.xls,.xlsm" style="display: none;" required onchange="atualizarNomeArquivoAds(this)">
+                </div>
+
+                <div style="background: #FAF6F2; border-left: 4px solid var(--wine-600); padding: 12px 14px; border-radius: 6px; font-size: 12px; color: var(--text-secondary); margin-bottom: 22px; line-height: 1.5;">
+                    <strong>&#9432; Inteligência de Rateio:</strong> O sistema vincula as despesas aos anúncios, calcula o CAC unitário de cada modelo e identifica pedidos cancelados para registrar o custo de Ads perdido.
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" onclick="fecharModalAds()" class="btn-secondary" style="padding: 9px 18px; font-size: 13px;">Cancelar</button>
+                    <button type="submit" class="btn-primary" style="padding: 9px 24px; font-size: 13px;">Processar Relatório de Ads</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Funções do Modal de Importação de Planilha
+    function abrirModalPlanilha(canal) {
+        const modal = document.getElementById('modal-importar-planilha');
+        const canalSelect = document.getElementById('modal_canal_select');
+        if (modal) {
+            modal.style.display = 'flex';
+            if (canal && canalSelect) {
+                canalSelect.value = canal;
+                atualizarIconeCanal(canal);
+            }
+        }
+    }
+
+    function fecharModalPlanilha() {
+        const modal = document.getElementById('modal-importar-planilha');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    function atualizarIconeCanal(canal) {
+        const iconDiv = document.getElementById('modal_canal_icon');
+        if (!iconDiv) return;
+        if (canal === 'shopee') {
+            iconDiv.style.background = '#FEF0EC';
+            iconDiv.style.color = '#D33916';
+        } else if (canal === 'mercadolivre') {
+            iconDiv.style.background = '#EEF4FD';
+            iconDiv.style.color = '#1754B5';
+        } else if (canal === 'tiktok') {
+            iconDiv.style.background = '#F0EEEE';
+            iconDiv.style.color = '#1F191A';
+        }
+    }
+
+    function atualizarNomeArquivo(input) {
+        const label = document.getElementById('nome_arquivo_selecionado');
+        const dropArea = document.getElementById('drop_area_planilha');
+        if (input.files && input.files[0]) {
+            const f = input.files[0];
+            const sizeMb = (f.size / (1024 * 1024)).toFixed(2);
+            label.innerHTML = `<span style="color: #1E6E3C;">&#10003; ${f.name}</span> <span style="font-size: 11.5px; font-weight: normal; color: var(--text-muted);">(${sizeMb} MB)</span>`;
+            if (dropArea) {
+                dropArea.style.borderColor = '#1E6E3C';
+                dropArea.style.background = '#EDF7EE';
+            }
+        }
+    }
+
+    // Funções do Modal de Importação de Ads
+    function abrirModalAds(canal) {
+        const modal = document.getElementById('modal-importar-ads');
+        if (modal) modal.style.display = 'flex';
+    }
+
+    function fecharModalAds() {
+        const modal = document.getElementById('modal-importar-ads');
+        if (modal) modal.style.display = 'none';
+    }
+
+    function atualizarNomeArquivoAds(input) {
+        const label = document.getElementById('nome_arquivo_ads_selecionado');
+        const dropArea = document.getElementById('drop_area_ads');
+        if (input.files && input.files[0]) {
+            const f = input.files[0];
+            const sizeMb = (f.size / (1024 * 1024)).toFixed(2);
+            label.innerHTML = `<span style="color: #1E6E3C;">&#10003; ${f.name}</span> <span style="font-size: 11.5px; font-weight: normal; color: var(--text-muted);">(${sizeMb} MB)</span>`;
+            if (dropArea) {
+                dropArea.style.borderColor = '#1E6E3C';
+                dropArea.style.background = '#EDF7EE';
+            }
+        }
+    }
+
+    // Fechar ao pressionar ESC ou clicar fora do conteúdo
+    window.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            fecharModalPlanilha();
+            fecharModalAds();
+        }
+    });
+    document.addEventListener('click', function(e) {
+        const modalPlanilha = document.getElementById('modal-importar-planilha');
+        if (e.target === modalPlanilha) fecharModalPlanilha();
+        const modalAds = document.getElementById('modal-importar-ads');
+        if (e.target === modalAds) fecharModalAds();
+    });
+
+    // Inicialização dos Gráficos com Chart.js
+    document.addEventListener("DOMContentLoaded", function() {
+        
+        // 1. Gráfico de Barras: Faturamento vs Lucro por Canal
+        const ctxCanais = document.getElementById('chartCanais');
+        if (ctxCanais) {
+            new Chart(ctxCanais, {
+                type: 'bar',
+                data: {
+                    labels: ['Shopee', 'Mercado Livre', 'TikTok Shop'],
+                    datasets: [
+                        {
+                            label: 'Faturamento Bruto (R$)',
+                            data: [
+                                {{ canais_stats.shopee.faturamento|stringformat:".2f" }},
+                                {{ canais_stats.mercadolivre.faturamento|stringformat:".2f" }},
+                                {{ canais_stats.tiktok.faturamento|stringformat:".2f" }}
+                            ],
+                            backgroundColor: '#6F2E34',
+                            borderRadius: 6
+                        },
+                        {
+                            label: 'Lucro Líquido Real (R$)',
+                            data: [
+                                {{ canais_stats.shopee.lucro|stringformat:".2f" }},
+                                {{ canais_stats.mercadolivre.lucro|stringformat:".2f" }},
+                                {{ canais_stats.tiktok.lucro|stringformat:".2f" }}
+                            ],
+                            backgroundColor: '#1E6E3C',
+                            borderRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top', labels: { font: { family: 'Plus Jakarta Sans', size: 12 } } }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) { return 'R$ ' + value; },
+                                font: { family: 'Plus Jakarta Sans', size: 11 }
+                            },
+                            grid: { color: '#EFE8DF' }
+                        },
+                        x: {
+                            ticks: { font: { family: 'Plus Jakarta Sans', size: 12, weight: 600 } },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 2. Gráfico Donut: Distribuição da Receita (DRE da Venda)
+        const ctxDRE = document.getElementById('chartDRE');
+        if (ctxDRE) {
+            const faturamento = {{ total_faturamento|stringformat:".2f" }};
+            const lucro = {{ total_lucro_liquido|stringformat:".2f" }};
+            const cpv = {{ total_cpv|stringformat:".2f" }};
+            const taxas = {{ total_taxas|stringformat:".2f" }};
+            const ads = {{ total_ads|stringformat:".2f" }};
+            const impostos = {{ total_impostos|stringformat:".2f" }};
+
+            new Chart(ctxDRE, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Lucro Líquido', 'Custo Produto (CPV)', 'Taxas Marketplace', 'Ads / Propaganda', 'Impostos'],
+                    datasets: [{
+                        data: [
+                            lucro > 0 ? lucro : 0,
+                            cpv,
+                            taxas,
+                            ads,
+                            impostos
+                        ],
+                        backgroundColor: [
+                            '#1E6E3C', // Verde Lucro
+                            '#883B43', // Vinho Fábrica
+                            '#D97706', // Âmbar Taxas
+                            '#1F6296', // Azul Ads
+                            '#8C7E81'  // Neutro Impostos
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#FFFFFF'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                font: { family: 'Plus Jakarta Sans', size: 11 },
+                                boxWidth: 14,
+                                padding: 12
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed || 0;
+                                    const total = faturamento > 0 ? faturamento : 1;
+                                    const pct = ((value / total) * 100).toFixed(1);
+                                    return context.label + ': R$ ' + value.toFixed(2) + ' (' + pct + '%)';
+                                }
+                            }
+                        }
+                    },
+                    cutout: '62%'
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

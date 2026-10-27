@@ -1,0 +1,297 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Romaneio de Produção - Sub-lote {{ sub_lote.codigo_sub_lote }}</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: #F8F5F1;
+            color: #23191B;
+            padding: 24px;
+        }
+
+        .no-print-bar {
+            max-width: 820px;
+            margin: 0 auto 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-imprimir {
+            background: linear-gradient(135deg, #6F2E34 0%, #521F24 100%);
+            color: #FCF7F2;
+            border: none;
+            padding: 10px 22px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 13.5px;
+            box-shadow: 0 4px 12px rgba(111, 46, 52, 0.2);
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-imprimir:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(111, 46, 52, 0.3);
+        }
+
+        .btn-voltar {
+            color: #6F2E34;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .btn-voltar:hover {
+            text-decoration: underline;
+        }
+
+        .relatorio-container {
+            max-width: 820px;
+            margin: 0 auto;
+            padding: 36px 40px;
+            border: 1px solid #E5DDD1;
+            border-radius: 16px;
+            background: #FFFFFF;
+            box-shadow: 0 4px 18px rgba(111, 46, 52, 0.04);
+        }
+
+        .relatorio-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid #6F2E34;
+            padding-bottom: 18px;
+            margin-bottom: 24px;
+        }
+
+        .logo-print {
+            max-width: 150px;
+            height: auto;
+            margin-bottom: 6px;
+        }
+
+        .header-title {
+            color: #6F2E34;
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: -0.3px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .info-box {
+            background: #FAF6F2;
+            padding: 16px;
+            border-radius: 10px;
+            border: 1px solid #EDE4D6;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .info-box strong {
+            color: #6F2E34;
+            font-weight: 700;
+        }
+
+        .tabela-grade {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            margin-bottom: 24px;
+            font-size: 13px;
+        }
+
+        .tabela-grade th, .tabela-grade td {
+            border: 1px solid #EDE4D6;
+            padding: 10px 14px;
+            text-align: left;
+        }
+
+        .tabela-grade th {
+            background-color: #6F2E34;
+            color: #FFFFFF;
+            font-size: 11.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .tabela-grade tbody tr:nth-child(even) {
+            background-color: #FAF6F2;
+        }
+
+        .conferencia-box {
+            border: 1px dashed #BD8E93;
+            padding: 16px 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            background: #FCFAF7;
+        }
+
+        .conferencia-box h5 {
+            color: #6F2E34;
+            margin-bottom: 10px;
+            font-size: 12.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .conferencia-box p {
+            font-size: 12px;
+            color: #554446;
+            line-height: 1.8;
+        }
+
+        .assinaturas {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-top: 40px;
+            text-align: center;
+        }
+
+        .linha-assinatura {
+            border-top: 1px solid #23191B;
+            padding-top: 8px;
+            font-size: 12px;
+            color: #554446;
+            font-weight: 600;
+        }
+
+        @media print {
+            body {
+                background: #FFFFFF;
+                padding: 0;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .relatorio-container {
+                border: none;
+                margin: 0;
+                padding: 0;
+                width: 100%;
+                max-width: 100%;
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print no-print-bar">
+        <a href="{% url 'producao' %}" class="btn-voltar">&larr; Voltar para Produção</a>
+        <button onclick="window.print()" class="btn-imprimir">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 6 2 18 2 18 9"/>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                <rect width="12" height="8" x="6" y="14"/>
+            </svg>
+            Imprimir Romaneio / PDF
+        </button>
+    </div>
+
+    <div class="relatorio-container">
+        <!-- Cabeçalho -->
+        <div class="relatorio-header">
+            <div>
+                <img src="{% static 'fabrica/img/logo_disfarce.png' %}?v=2" alt="Disfarce" class="logo-print">
+                <div class="header-title">Ordem de Produção & Romaneio de Costura</div>
+            </div>
+            <div style="text-align: right;">
+                <span style="font-size: 12px; color: #7A696C; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Identificador do Sub-lote:</span>
+                <div style="font-size: 24px; font-weight: 800; color: #6F2E34; letter-spacing: -0.5px;">{{ sub_lote.codigo_sub_lote }}</div>
+            </div>
+        </div>
+
+        <!-- Informações Gerais em Cards -->
+        <div class="info-grid">
+            <div class="info-box">
+                <p><strong>Faccionista Parceira:</strong> {{ sub_lote.faccionista.nome|default:"Não informada" }}</p>
+                <p><strong>Contato / Tel:</strong> {{ sub_lote.faccionista.telefone|default:"-" }}</p>
+                <p><strong>Processo / Etapa:</strong> <span style="color: #1E6E3C; font-weight: 700;">{{ sub_lote.processo_faccionista|default:"Costura geral" }}</span></p>
+            </div>
+            <div class="info-box">
+                <p><strong>Modelo / Referência:</strong> {{ sub_lote.lote_corte.produto.sku }} - {{ sub_lote.lote_corte.produto.nome }}</p>
+                <p><strong>Lote de Corte de Origem:</strong> {{ sub_lote.lote_corte.codigo_lote }}</p>
+                <p><strong>Data de Envio:</strong> {{ sub_lote.data_envio|default:"Aguardando envio" }}</p>
+            </div>
+        </div>
+
+        <!-- Grade de Peças Enviadas -->
+        <h4 style="color: #6F2E34; font-size: 13px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 6px;">
+            Grade de Peças Encaminhadas para Montagem:
+        </h4>
+        <table class="tabela-grade">
+            <thead>
+                <tr>
+                    <th>Cor / Estampa</th>
+                    <th>Tamanho</th>
+                    <th style="text-align: right;">Quantidade Enviada</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for g in sub_lote.grades.all %}
+                <tr>
+                    <td style="font-weight: 600;">{{ g.cor }}</td>
+                    <td><span style="display: inline-block; padding: 2px 8px; background: #FAF5F0; border: 1px solid #E5DDD1; border-radius: 4px; font-weight: 700; font-size: 12px;">{{ g.tamanho }}</span></td>
+                    <td style="text-align: right; font-weight: 700;">{{ g.quantidade }} pçs</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" style="text-align: center; color: #7A696C; padding: 20px;">Nenhuma grade detalhada no registro.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr style="background-color: #FAF5F0; font-weight: 700;">
+                    <td colspan="2" style="text-align: right; text-transform: uppercase; font-size: 12px;">Total de Peças Entregues:</td>
+                    <td style="text-align: right; color: #6F2E34; font-size: 15px;">{{ sub_lote.quantidade_enviada }} pçs</td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <!-- Espaço para Conferência de Retorno -->
+        <div class="conferencia-box">
+            <h5>Conferência e Retorno da Oficina</h5>
+            <p>Qtd Real Retornada (Conformes): ____________________ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Peças com Defeito / Refugos: ____________________</p>
+            <p>Observações / Ocorrências: ____________________________________________________________________________________________</p>
+        </div>
+
+        <!-- Assinaturas -->
+        <div class="assinaturas">
+            <div>
+                <div class="linha-assinatura">Responsável pelo Envio (Disfarce)</div>
+            </div>
+            <div>
+                <div class="linha-assinatura">Responsável pelo Recebimento (Faccionista)</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

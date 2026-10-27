@@ -1,0 +1,182 @@
+{% extends 'fabrica/base.html' %}
+{% load static %}
+
+{% block title %}Produtos & Referências - Disfarce{% endblock %}
+{% block breadcrumb %}Produtos & Referências{% endblock %}
+{% block page_title %}Catálogo de Produtos & Categorias{% endblock %}
+
+{% block content %}
+<div class="container">
+    
+    {% if request.user.is_superuser %}
+    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px; margin-bottom: 30px;">
+        <!-- Caixa de Gestão de Categorias -->
+        <div class="card" style="margin-bottom: 0;">
+            <div class="card-header">
+                <h3>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
+                    </svg>
+                    Categorias
+                </h3>
+                <span class="table-count-badge">{{ categorias|length }}</span>
+            </div>
+            
+            <form action="{% url 'cadastrar_categoria' %}" method="post" style="display: flex; gap: 8px; margin-bottom: 16px;">
+                {% csrf_token %}
+                <input type="text" name="nome" placeholder="Nova Categoria..." class="form-control" required style="font-size: 13px;">
+                <button type="submit" class="btn-primary" style="white-space: nowrap; padding: 10px 14px; display: inline-flex; align-items: center; gap: 6px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span>Adicionar</span>
+                </button>
+            </form>
+
+            <div style="max-height: 190px; overflow-y: auto; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 4px;">
+                <table class="data-table" style="font-size: 12.5px;">
+                    <tbody>
+                        {% for cat in categorias %}
+                        <tr>
+                            <td style="padding: 10px 12px; font-weight: 500;">{{ cat.nome }}</td>
+                            <td style="text-align: right; white-space: nowrap; padding: 10px 12px;">
+                                <a href="{% url 'editar_categoria' cat.id %}" class="btn-acao btn-editar" title="Editar categoria">Editar</a>
+                                <a href="{% url 'excluir_categoria' cat.id %}" class="btn-acao btn-excluir" onclick="return confirm('Deseja realmente excluir a categoria {{ cat.nome }}?');" title="Excluir categoria">Excluir</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="2" class="empty-state" style="padding: 20px;">
+                                <p style="font-size: 12px;">Nenhuma categoria registrada.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Formulário de Cadastro de Novo Produto -->
+        <div class="card" style="margin-bottom: 0;">
+            <div class="card-header">
+                <h3>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14"/>
+                        <path d="M12 5v14"/>
+                    </svg>
+                    Cadastrar Novo Modelo / Produto
+                </h3>
+            </div>
+            
+            <form method="post" style="display: flex; flex-direction: column; gap: 14px;">
+                {% csrf_token %}
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Código SKU / Referência *</label>
+                        <input type="text" name="sku" placeholder="Ex: REF-101" class="form-control" required>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Categoria do Produto *</label>
+                        <select name="categoria" class="form-control" required>
+                            <option value="">Selecione uma categoria...</option>
+                            {% for cat in categorias %}
+                                <option value="{{ cat.id }}">{{ cat.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Nome / Descrição Curta do Modelo *</label>
+                    <input type="text" name="nome" placeholder="Ex: Conjunto Renda Floral com Bojo" class="form-control" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Observações / Ficha Técnica</label>
+                    <textarea name="descricao" placeholder="Detalhes de modelagem, tecidos recomendados, composição..." rows="2" class="form-control"></textarea>
+                </div>
+
+                <div style="text-align: right; margin-top: 4px;">
+                    <button type="submit" class="btn-primary" style="padding: 11px 24px;">Salvar Produto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Tabela Geral de Produtos Cadastrados -->
+    <div class="table-container">
+        <div class="table-header-box">
+            <h3>Modelos & Referências Cadastradas</h3>
+            <span class="table-count-badge">{{ produtos|length }} itens</span>
+        </div>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width: 120px;">SKU / Ref</th>
+                        <th>Nome do Modelo</th>
+                        <th>Categoria</th>
+                        <th>Custo Mat.-Prima</th>
+                        <th>Observações</th>
+                        <th style="text-align: right;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for prod in produtos %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'detalhe_produto' prod.id %}" style="text-decoration: none;">
+                                <strong style="color: var(--wine-700); font-size: 13.5px;">{{ prod.sku }}</strong>
+                            </a>
+                        </td>
+                        <td>
+                            <a href="{% url 'detalhe_produto' prod.id %}" style="text-decoration: none; color: inherit;">
+                                <span style="font-weight: 600; color: var(--text-primary);">{{ prod.nome }}</span>
+                            </a>
+                        </td>
+                        <td>
+                            <span class="tag-pill">{{ prod.categoria.nome }}</span>
+                        </td>
+                        <td>
+                            {% with custo=prod.custo_materia_prima_total %}
+                                {% if custo > 0 %}
+                                    <strong style="color: #1E6E3C; font-size: 13px;">R$ {{ custo|floatformat:2 }}</strong>
+                                    <small style="color: var(--text-muted); font-size: 10.5px;">/ pç</small>
+                                {% else %}
+                                    <span style="color: var(--text-muted); font-size: 12px;">Não cadastrado</span>
+                                {% endif %}
+                            {% endwith %}
+                        </td>
+                        <td>
+                            <span style="color: var(--text-muted); font-size: 12.5px;">{{ prod.descricao|default:"-" }}</span>
+                        </td>
+                        <td style="text-align: right; white-space: nowrap;">
+                            <a href="{% url 'detalhe_produto' prod.id %}" class="btn-acao btn-editar" style="background-color: var(--wine-50); color: var(--wine-600); border-color: var(--wine-200);" title="Ver ficha técnica, medidas e matérias-primas">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                </svg>
+                                <span>Ficha & Custos</span>
+                            </a>
+                            {% if request.user.is_superuser %}
+                            <a href="{% url 'editar_produto' prod.id %}" class="btn-acao btn-editar">Editar</a>
+                            <a href="{% url 'excluir_produto' prod.id %}" class="btn-acao btn-excluir" onclick="return confirm('Deseja realmente excluir o produto {{ prod.sku }}?');">Excluir</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <p>Nenhum produto cadastrado até o momento.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

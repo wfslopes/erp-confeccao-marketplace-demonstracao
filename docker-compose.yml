@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: lumina_erp_app
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py seed_demo_data &&
+             python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=True
+      - SECRET_KEY=django-insecure-docker-demo-showcase-key-2026
+      - ALLOWED_HOSTS=*
+    restart: unless-stopped

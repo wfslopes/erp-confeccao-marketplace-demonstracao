@@ -1,0 +1,842 @@
+{% extends 'fabrica/base.html' %}
+{% load static %}
+
+{% block title %}Operações & Tempo Padrão (TP) - Disfarce{% endblock %}
+{% block breadcrumb %}Produção Fabril &rsaquo; Engenharia & Tempo Padrão{% endblock %}
+{% block page_title %}Engenharia de Operações & Tempo Padrão (TP){% endblock %}
+
+{% block content %}
+<div class="container">
+
+    <!-- Topbar: Título e Ações Rápidas -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 14px;">
+        <div>
+            <h2 style="font-size: 22px; color: var(--wine-900); font-weight: 700; margin: 0;">
+                Estudo de Tempos, Métodos & Manual de Operações
+            </h2>
+            <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">
+                Cálculo de Tempo Padrão (TP) baseado em graus de manuseio e velocidade de máquina por 10 cm de costura.
+            </p>
+        </div>
+
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button onclick="window.print()" class="btn-secondary" style="padding: 9px 15px; font-size: 13px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                    <rect width="12" height="8" x="6" y="14"></rect>
+                </svg>
+                <span>Imprimir Folha de Processo</span>
+            </button>
+
+            <button onclick="abrirModalReferencias()" class="btn-secondary" style="padding: 9px 15px; font-size: 13px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="4" y1="21" x2="4" y2="14"></line>
+                    <line x1="4" y1="10" x2="4" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12" y2="3"></line>
+                    <line x1="20" y1="21" x2="20" y2="16"></line>
+                    <line x1="20" y1="12" x2="20" y2="3"></line>
+                    <line x1="1" y1="14" x2="7" y2="14"></line>
+                    <line x1="9" y1="8" x2="15" y2="8"></line>
+                    <line x1="17" y1="16" x2="23" y2="16"></line>
+                </svg>
+                <span>Tabelas de Referência (Máq & Manuseio)</span>
+            </button>
+
+            {% if request.user.is_superuser %}
+            <button onclick="abrirModalDuplicar()" class="btn-secondary" style="padding: 9px 15px; font-size: 13px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="13" height="13" x="9" y="9" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span>Copiar Operações</span>
+            </button>
+
+            <button onclick="abrirModalNovaOperacao()" class="btn-primary" style="padding: 9px 18px; font-size: 13px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <span>Adicionar Operação</span>
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Indicadores Gerais e do Produto Selecionado -->
+    <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); margin-bottom: 24px;">
+        
+        <!-- Tempo Padrão Total do Modelo -->
+        <div class="stat-card" style="border-left: 4px solid var(--wine-700);">
+            <div class="stat-card-header">
+                <h4>Tempo Padrão da Peça (TP)</h4>
+                <div class="stat-card-icon" style="background: rgba(106, 17, 36, 0.1); color: var(--wine-700);">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                </div>
+            </div>
+            <div class="value" style="color: var(--wine-900);">{{ tempo_padrao_total|floatformat:3 }} min</div>
+            <div class="stat-desc">
+                <span class="tag-pill" style="font-weight: 600;">C/ Pacote: {{ tempo_padrao_pcte_total|floatformat:3 }} min</span>
+            </div>
+        </div>
+
+        <!-- Capacidade de Produção -->
+        <div class="stat-card" style="border-left: 4px solid #1E6E3C;">
+            <div class="stat-card-header">
+                <h4>Capacidade por Costureira</h4>
+                <div class="stat-card-icon green">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                        <polyline points="17 6 23 6 23 12"></polyline>
+                    </svg>
+                </div>
+            </div>
+            <div class="value" style="color: #1E6E3C;">{{ pecas_hora }} pç/h</div>
+            <div class="stat-desc">
+                <span class="tag-pill">~ {{ pecas_dia }} peças / dia (8h)</span>
+            </div>
+        </div>
+
+        <!-- Custo de Mão de Obra -->
+        <div class="stat-card" style="border-left: 4px solid #C07D18;">
+            <div class="stat-card-header">
+                <h4>Custo Mão de Obra / Peça</h4>
+                <div class="stat-card-icon amber">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="2" x2="12" y2="22"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="value" style="color: #92580E;">R$ {{ custo_mao_obra|floatformat:2 }}</div>
+            <div class="stat-desc">
+                <span class="tag-pill">Taxa: R$ {{ config_eng.custo_minuto_costura|floatformat:2 }}/min</span>
+            </div>
+        </div>
+
+        <!-- Média Padrão Geral da Fábrica -->
+        <div class="stat-card" style="border-left: 4px solid #2B6CB0;">
+            <div class="stat-card-header">
+                <h4>Média Geral da Fábrica</h4>
+                <div class="stat-card-icon blue">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="value" style="color: #2B6CB0;">{{ tempo_medio_geral }} min</div>
+            <div class="stat-desc">
+                <span class="tag-pill">{{ total_modelos_estudados }} modelos cronometrados</span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Barra de Filtro e Seleção de Produto -->
+    <div class="card" style="margin-bottom: 24px; padding: 16px 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+            <div style="display: flex; align-items: center; gap: 12px; flex-grow: 1; max-width: 650px;">
+                <label style="font-weight: 700; color: var(--wine-900); font-size: 13px; white-space: nowrap; margin-bottom: 0;">
+                    Produto / Modelo:
+                </label>
+                <select id="selectProduto" class="form-control" onchange="selecionarProduto(this.value)" style="font-weight: 600; font-size: 13.5px; border-color: var(--wine-200);">
+                    {% for p in produtos %}
+                    <option value="{{ p.id }}" {% if produto_selecionado and produto_selecionado.id == p.id %}selected{% endif %}>
+                        {{ p.sku }} — {{ p.nome }} ({{ p.operacoes.count }} operações)
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="display: flex; gap: 10px; align-items: center;">
+                {% if produto_selecionado %}
+                <a href="{% url 'detalhe_produto' produto_selecionado.id %}" class="btn-secondary" style="padding: 8px 14px; font-size: 12.5px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    <span>Ver Ficha Técnica Completa</span>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Balanceamento de Linha: Distribuição por Máquina -->
+    {% if distribuicao_maquinas %}
+    <div class="card" style="margin-bottom: 24px;">
+        <div class="card-header" style="padding-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <div>
+                    <h3 style="font-size: 15px; margin: 0; display: flex; align-items: center; gap: 8px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="18" height="18" x="3" y="3" rx="2"></rect>
+                            <path d="M3 9h18"></path>
+                            <path d="M9 21V9"></path>
+                        </svg>
+                        Balanceamento do Modelo por Tipo de Máquina & Posto
+                    </h3>
+                    <p style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">
+                        Distribuição do tempo total da peça entre postos operacionais para equalização de linha.
+                    </p>
+                </div>
+                <span class="tag-pill" style="font-size: 11.5px; background: #FAF5F0; color: var(--wine-700);">
+                    Gargalo da Peça: <strong>{{ distribuicao_maquinas.0.maquina }} ({{ distribuicao_maquinas.0.percentual }}%)</strong>
+                </span>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 12px;">
+            <!-- Barra de Ocupação Multi-Cor -->
+            <div style="display: flex; height: 14px; border-radius: 7px; overflow: hidden; background: #eee;">
+                {% for item in distribuicao_maquinas %}
+                <div style="width: {{ item.percentual }}%; background: {% cycle '#6A1124' '#2B6CB0' '#1E6E3C' '#C07D18' '#805AD5' '#4A5568' %};" 
+                     title="{{ item.maquina }}: {{ item.tempo }} min ({{ item.percentual }}%)"></div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Legenda das Máquinas -->
+        <div style="display: flex; flex-wrap: wrap; gap: 16px;">
+            {% for item in distribuicao_maquinas %}
+            <div style="display: flex; align-items: center; gap: 6px; font-size: 12.5px;">
+                <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: {% cycle '#6A1124' '#2B6CB0' '#1E6E3C' '#C07D18' '#805AD5' '#4A5568' %};"></span>
+                <strong>{{ item.maquina }}</strong>:
+                <span style="color: var(--text-muted);">{{ item.tempo }} min ({{ item.percentual }}%)</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- TABELA DE OPERAÇÕES DO PRODUTO (FOLHA DE PROCESSO) -->
+    <style>
+        .tabela-engenharia-wrapper {
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-sm);
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            background: white;
+            box-shadow: inset 0 0 6px rgba(0,0,0,0.02);
+        }
+        .tabela-engenharia {
+            width: 100%;
+            min-width: 1050px;
+            border-collapse: collapse;
+        }
+        .tabela-engenharia th {
+            padding: 10px 10px;
+            font-size: 11px;
+            white-space: nowrap;
+            background: #FAF5F0;
+            color: var(--wine-800);
+            border-bottom: 2px solid var(--wine-200);
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+        .tabela-engenharia td {
+            padding: 10px 10px;
+            font-size: 12.5px;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: middle;
+        }
+        .tabela-engenharia tbody tr:hover {
+            background-color: #FAF6F2;
+        }
+    </style>
+
+    <div class="card" style="margin-bottom: 28px;">
+        <div class="card-header">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 8px;">
+                <div>
+                    <h3>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="8" y1="6" x2="21" y2="6"></line>
+                            <line x1="8" y1="12" x2="21" y2="12"></line>
+                            <line x1="8" y1="18" x2="21" y2="18"></line>
+                            <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                            <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                            <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                        </svg>
+                        Sequência Operacional / Manual de Confecção & Cronometragem
+                    </h3>
+                    <p style="font-size: 12.5px; color: var(--text-muted); margin-top: 4px;">
+                        Roteiro passo a passo com cálculo detalhado de manuseio, costura e tempos padrão para {{ produto_selecionado.nome }}.
+                    </p>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--text-muted);">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                    <span>Role para visualizar todos os campos</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="tabela-engenharia-wrapper">
+            <table class="tabela-engenharia">
+                <thead>
+                    <tr>
+                        <th style="width: 38px; text-align: center;">Nº</th>
+                        <th style="min-width: 190px;">Operação / Descrição</th>
+                        <th style="width: 85px;">Máquina</th>
+                        <th style="width: 105px;">Aviamento</th>
+                        <th style="width: 95px; text-align: center;">Manuseio</th>
+                        <th style="width: 85px; text-align: right;">Costura</th>
+                        <th style="width: 95px; text-align: right;">TP Padrão</th>
+                        <th style="width: 85px; text-align: right;">c/ Pcte</th>
+                        <th style="width: 100px; text-align: right;">Cronômetro</th>
+                        <th style="min-width: 150px;">Observações / Instruções</th>
+                        {% if request.user.is_superuser %}<th style="width: 110px; text-align: right;">Ações</th>{% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for op in operacoes %}
+                    <tr>
+                        <td style="text-align: center; font-weight: 700; color: var(--wine-700);">
+                            {{ op.ordem }}
+                        </td>
+                        <td>
+                            <strong style="color: var(--text-primary); font-size: 13px; line-height: 1.35; display: block;">{{ op.titulo }}</strong>
+                            {% if op.parte_peca %}
+                            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Parte: {{ op.parte_peca }}</div>
+                            {% endif %}
+                            {% if op.aparelho %}
+                            <div style="font-size: 11px; color: var(--wine-600); margin-top: 2px;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;"><polygon points="12 2 2 7 12 12 22 7 12 2"/></svg> {{ op.aparelho }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="tag-pill" style="font-weight: 700; background: #FAF5F0; color: var(--wine-700); padding: 3px 8px; font-size: 11.5px;">
+                                {{ op.maquina_codigo }}
+                            </span>
+                            <div style="font-size: 10.5px; color: var(--text-secondary); margin-top: 2px;">{{ op.maquina_nome|default:"" }}</div>
+                        </td>
+                        <td>
+                            {% if op.condicao == 'com_elastico' %}
+                            <span class="badge badge-warning" style="font-size: 10px; padding: 2px 7px;">c/ Elástico (+5%)</span>
+                            {% elif op.condicao == 'com_vies' %}
+                            <span class="badge badge-info" style="font-size: 10px; padding: 2px 7px; background: rgba(43,108,176,0.1); color: #2B6CB0;">c/ Viés (+5%)</span>
+                            {% elif op.condicao == 'com_2vies' %}
+                            <span class="badge badge-info" style="font-size: 10px; padding: 2px 7px; background: rgba(128,90,213,0.1); color: #805AD5;">c/ 2 Viés (+10%)</span>
+                            {% else %}
+                            <span style="font-size: 11px; color: var(--text-muted);">s/ Aviamento</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            <strong>{{ op.qtde_manuseio }}x</strong> 
+                            <span class="tag-pill" style="font-size: 10.5px; padding: 2px 5px;">{{ op.dificuldade }}</span>
+                            <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 1px;">{{ op.tempo_manuseio|floatformat:3 }}m</div>
+                        </td>
+                        <td style="text-align: right;">
+                            <strong>{{ op.comprimento_costura_cm|floatformat:0 }}</strong> <span style="font-size: 10.5px; color: var(--text-muted);">cm</span>
+                            <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 1px;">{{ op.tempo_costura|floatformat:3 }}m</div>
+                        </td>
+                        <td style="text-align: right;">
+                            <strong style="color: var(--wine-800); font-size: 13.5px;">{{ op.tempo_padrao|floatformat:3 }}</strong> <span style="font-size: 10.5px; color: var(--text-muted);">min</span>
+                        </td>
+                        <td style="text-align: right;">
+                            <span style="font-weight: 600; color: var(--text-primary); font-size: 12.5px;">{{ op.tempo_padrao_pcte|floatformat:3 }}</span>
+                        </td>
+                        <td style="text-align: right;">
+                            {% if op.pot_seg %}
+                            <div style="font-size: 11.5px; font-weight: 600; color: #2B6CB0;">
+                                {{ op.pot_seg|floatformat:1 }}s
+                            </div>
+                            <div style="font-size: 10px; color: var(--text-muted);">
+                                TP: {{ op.tp_min_video|floatformat:3 }}m
+                            </div>
+                            {% else %}
+                            <span style="color: #bbb; font-size: 12px;">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span style="font-size: 11.5px; color: {% if op.observacoes %}var(--wine-700){% else %}#aaa{% endif %}; line-height: 1.3; display: block;">
+                                {{ op.observacoes|default:"—" }}
+                            </span>
+                        </td>
+                        {% if request.user.is_superuser %}
+                        <td style="text-align: right; white-space: nowrap;">
+                            <button onclick="editarOperacaoModal({{ op.id }}, '{{ op.ordem }}', '{{ op.titulo|escapejs }}', '{{ op.parte_peca|default:''|escapejs }}', '{{ op.maquina_codigo }}', '{{ op.condicao }}', '{{ op.aparelho|default:''|escapejs }}', '{{ op.qtde_manuseio }}', '{{ op.dificuldade }}', '{{ op.comprimento_costura_cm }}', '{{ op.pot_seg|default:'' }}', '{{ op.ritmo|default:'1.0' }}', '{{ op.tolerancia|default:'0.15' }}', '{{ op.observacoes|default:''|escapejs }}')" 
+                                    class="btn-acao btn-editar" title="Editar Operação" style="padding: 4px 8px; font-size: 11px;">
+                                Editar
+                            </button>
+                            <form action="{% url 'operacoes_engenharia' %}" method="post" style="display: inline;" onsubmit="return confirm('Deseja excluir a operação #{{ op.ordem }}?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="excluir_operacao">
+                                <input type="hidden" name="operacao_id" value="{{ op.id }}">
+                                <button type="submit" class="btn-acao btn-excluir" title="Excluir" style="padding: 4px 8px; font-size: 11px;">
+                                    Excluir
+                                </button>
+                            </form>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="11" class="empty-state" style="padding: 32px;">
+                            <p style="color: var(--text-muted); font-size: 14px;">
+                                Nenhuma operação cadastrada para {{ produto_selecionado.nome }}. Cadastre as operações da peça para iniciar o estudo deste produto.
+                            </p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                {% if operacoes %}
+                <tfoot>
+                    <tr style="background: #FAF5F0; font-weight: 700;">
+                        <td colspan="6" style="text-align: right; text-transform: uppercase; font-size: 11.5px; padding: 12px 14px; color: var(--wine-800);">
+                            Tempo Padrão Geral da Peça (Soma das Operações):
+                        </td>
+                        <td style="text-align: right; font-size: 15px; color: var(--wine-900); padding: 12px 14px;">
+                            {{ tempo_padrao_total|floatformat:3 }} min
+                        </td>
+                        <td style="text-align: right; font-size: 13.5px; color: var(--text-primary); padding: 12px 14px;">
+                            {{ tempo_padrao_pcte_total|floatformat:3 }} min
+                        </td>
+                        <td colspan="3" style="font-size: 11.5px; color: #1E6E3C; padding: 12px 14px;">
+                            Estimativa: <strong>{{ pecas_hora }} pçs/h</strong> (~{{ pecas_dia }} pçs/dia)
+                        </td>
+                    </tr>
+                </tfoot>
+                {% endif %}
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- ============================================================================== -->
+<!-- MODAL: ADICIONAR / EDITAR OPERAÇÃO COM CÁLCULO EM TEMPO REAL                   -->
+<!-- ============================================================================== -->
+{% if request.user.is_superuser %}
+<div id="modalOperacao" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: var(--radius-lg); width: 100%; max-width: 680px; max-height: 90vh; overflow-y: auto; padding: 26px; box-shadow: 0 10px 30px rgba(0,0,0,0.25);">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-light); padding-bottom: 14px; margin-bottom: 20px;">
+            <h3 id="modalOperacaoTitulo" style="margin: 0; color: var(--wine-900); font-size: 18px; font-weight: 700;">
+                Adicionar Operação
+            </h3>
+            <button onclick="fecharModalOperacao()" style="background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text-muted);">&times;</button>
+        </div>
+
+        <form action="{% url 'operacoes_engenharia' %}" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" id="formOpAction" value="adicionar_operacao">
+            <input type="hidden" name="operacao_id" id="formOpId" value="">
+            <input type="hidden" name="produto_id" value="{{ produto_selecionado.id }}">
+
+            <div style="display: grid; grid-template-columns: 1fr 3fr; gap: 12px; margin-bottom: 14px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Ordem / Seq *</label>
+                    <input type="number" name="ordem" id="opOrdem" class="form-control" value="{{ operacoes.count|add:1 }}" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>O Que Fazer / Descrição da Operação *</label>
+                    <input type="text" name="titulo" id="opTitulo" placeholder="Ex: Fechar entreperna dianteira c/ forro e traseira" class="form-control" required>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 2fr 2fr; gap: 12px; margin-bottom: 14px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Máquina / Processo *</label>
+                    <select name="maquina_codigo" id="opMaquina" class="form-control" onchange="calcularPrevia()" required>
+                        {% for ref in referencias_maquinas %}
+                        <option value="{{ ref.codigo }}" data-base="{{ ref.tempo_base }}" data-tipo="{{ ref.tipo_calculo }}" data-el="{{ ref.fator_elastico }}" data-vi="{{ ref.fator_vies }}" data-2vi="{{ ref.fator_2vies }}">
+                            {{ ref.codigo }} — {{ ref.nome }} ({{ ref.tempo_base }} min{% if ref.tipo_calculo == '10cm' %}/10cm{% else %}/un{% endif %})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Condição de Aviamento</label>
+                    <select name="condicao" id="opCondicao" class="form-control" onchange="calcularPrevia()">
+                        <option value="sem_aviamento">Costura s/ Aviamento (Base)</option>
+                        <option value="com_elastico">Costura c/ Elástico (+5%)</option>
+                        <option value="com_vies">Costura c/ Viés (+5%)</option>
+                        <option value="com_2vies">Costura c/ 2 Viés (+10%)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 12px; margin-bottom: 14px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Qtde Manuseios *</label>
+                    <input type="number" name="qtde_manuseio" id="opQtdeManuseio" value="4" min="1" class="form-control" oninput="calcularPrevia()" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Dificuldade *</label>
+                    <select name="dificuldade" id="opDificuldade" class="form-control" onchange="calcularPrevia()">
+                        {% for dif in dificuldades %}
+                        <option value="{{ dif.codigo }}" data-tempo="{{ dif.tempo_min }}" {% if dif.codigo == 'F2' %}selected{% endif %}>
+                            {{ dif.codigo }} - {{ dif.nome }} ({{ dif.tempo_min }}m)
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Comprimento Costura (cm) ou Qtde *</label>
+                    <input type="number" step="0.01" name="comprimento_costura_cm" id="opComprimento" value="20" class="form-control" oninput="calcularPrevia()" required>
+                    <small style="font-size: 11px; color: var(--text-muted);">Ex: 20 para 20 cm, ou 8 para 8 batidas de travete</small>
+                </div>
+            </div>
+
+            <!-- CARD DE PRÉVIA EM TEMPO REAL -->
+            <div style="background: #FAF5F0; border: 1.5px dashed var(--wine-200); border-radius: var(--radius-md); padding: 14px 18px; margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <strong style="color: var(--wine-900); font-size: 13px;">Cálculo Estimado em Tempo Real:</strong>
+                    <span class="tag-pill" style="background: white; border: 1px solid var(--border-light); font-size: 11px;">Fórmula Padrão da Engenharia</span>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align: center;">
+                    <div style="background: white; padding: 8px; border-radius: 6px; border: 1px solid #E2D9D0;">
+                        <div style="font-size: 11px; color: var(--text-muted);">Tempo Manuseio</div>
+                        <strong id="previaManuseio" style="color: var(--text-primary); font-size: 14px;">0.200 min</strong>
+                    </div>
+                    <div style="background: white; padding: 8px; border-radius: 6px; border: 1px solid #E2D9D0;">
+                        <div style="font-size: 11px; color: var(--text-muted);">Tempo Costura</div>
+                        <strong id="previaCostura" style="color: var(--text-primary); font-size: 14px;">0.140 min</strong>
+                    </div>
+                    <div style="background: white; padding: 8px; border-radius: 6px; border: 1.5px solid var(--wine-600);">
+                        <div style="font-size: 11px; color: var(--wine-700); font-weight: 600;">Tempo Padrão (TP)</div>
+                        <strong id="previaTP" style="color: var(--wine-900); font-size: 16px;">0.340 min</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Parte da Peça (Opcional)</label>
+                    <input type="text" name="parte_peca" id="opPartePeca" placeholder="Ex: Pala, Bojo, Cintura..." class="form-control">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Aparelho / Acessório / Guia</label>
+                    <input type="text" name="aparelho" id="opAparelho" placeholder="Ex: Aparelho viés 16mm, calcador zíper..." class="form-control">
+                </div>
+            </div>
+
+            <!-- Cronometragem / Vídeo (Colapsável) -->
+            <details style="border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 14px;">
+                <summary style="font-size: 12.5px; font-weight: 600; cursor: pointer; color: var(--wine-700);">
+                    + Dados de Cronometragem Real / Estudo de Vídeo (Opcional)
+                </summary>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 10px;">
+                    <div>
+                        <label style="font-size: 11px;">POT Segundos</label>
+                        <input type="number" step="0.01" name="pot_seg" id="opPotSeg" placeholder="Ex: 52 ou 0.52" class="form-control">
+                    </div>
+                    <div>
+                        <label style="font-size: 11px;">Ritmo Operador (%)</label>
+                        <input type="number" step="0.01" name="ritmo" id="opRitmo" value="1.00" class="form-control">
+                    </div>
+                    <div>
+                        <label style="font-size: 11px;">Tolerância (%)</label>
+                        <input type="number" step="0.01" name="tolerancia" id="opTolerancia" value="0.15" class="form-control">
+                    </div>
+                </div>
+            </details>
+
+            <div class="form-group" style="margin-bottom: 18px;">
+                <label>Instrução de Confecção / Observações Técnicas</label>
+                <textarea name="observacoes" id="opObservacoes" rows="2" placeholder="Observações para a costureira interna ou faccionista parceira..." class="form-control"></textarea>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-light); padding-top: 14px;">
+                <button type="button" onclick="fecharModalOperacao()" class="btn-secondary" style="padding: 9px 18px;">Cancelar</button>
+                <button type="submit" class="btn-primary" style="padding: 9px 24px;">Salvar Operação</button>
+            </div>
+        </form>
+
+    </div>
+</div>
+{% endif %}
+
+<!-- ============================================================================== -->
+<!-- MODAL: TABELAS DE REFERÊNCIA & PARÂMETROS DA ENGENHARIA (ABA CÁLCULOS)         -->
+<!-- ============================================================================== -->
+<div id="modalReferencias" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: var(--radius-lg); width: 100%; max-width: 820px; max-height: 90vh; overflow-y: auto; padding: 26px; box-shadow: 0 10px 30px rgba(0,0,0,0.25);">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-light); padding-bottom: 14px; margin-bottom: 20px;">
+            <div>
+                <h3 style="margin: 0; color: var(--wine-900); font-size: 18px; font-weight: 700;">
+                    Tabelas de Referência & Parâmetros de Engenharia
+                </h3>
+                <p style="font-size: 12px; color: var(--text-muted); margin: 3px 0 0 0;">
+                    Dados base da aba de cálculos: tempo por 10 cm de costura, tabela de manuseio e acréscimos de pacote.
+                </p>
+            </div>
+            <button onclick="fecharModalReferencias()" style="background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text-muted);">&times;</button>
+        </div>
+
+        <!-- Parâmetros Globais de Pacote e Custo -->
+        <div class="card" style="margin-bottom: 20px; background: #FAF5F0; border-color: var(--wine-200);">
+            <h4 style="font-size: 14px; color: var(--wine-900); margin: 0 0 10px 0;">
+                Parâmetros de Pacote & Custo de Mão de Obra
+            </h4>
+            <form action="{% url 'operacoes_engenharia' %}" method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="salvar_config_engenharia">
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr) auto; gap: 10px; align-items: flex-end;">
+                    <div>
+                        <label style="font-size: 11px;">Tempo Pacote (min)</label>
+                        <input type="number" step="0.0001" name="tempo_pacote_min" value="{{ config_eng.tempo_pacote_min }}" class="form-control" required>
+                    </div>
+                    <div>
+                        <label style="font-size: 11px;">Peças no Pacote</label>
+                        <input type="number" name="tamanho_pacote" value="{{ config_eng.tamanho_pacote }}" class="form-control" required>
+                    </div>
+                    <div>
+                        <label style="font-size: 11px;">Custo Minuto (R$)</label>
+                        <input type="number" step="0.0001" name="custo_minuto_costura" value="{{ config_eng.custo_minuto_costura }}" class="form-control" required>
+                    </div>
+                    <div>
+                        <label style="font-size: 11px;">Jornada Diária (h)</label>
+                        <input type="number" step="0.1" name="jornada_horas_dia" value="{{ config_eng.jornada_horas_dia }}" class="form-control" required>
+                    </div>
+                    <div>
+                        <button type="submit" class="btn-primary" style="padding: 9px 16px; font-size: 12.5px;">Atualizar</button>
+                    </div>
+                </div>
+                <small style="display: block; margin-top: 6px; color: var(--text-muted); font-size: 11px;">
+                    Cota atual de pacote por peça: <strong>{{ config_eng.adicional_pacote_min|floatformat:4 }} min</strong> (+0.70 min a cada 50 peças).
+                </small>
+            </form>
+        </div>
+
+        <!-- Grade de Dificuldade de Manuseio -->
+        <h4 style="font-size: 14px; color: var(--wine-900); margin: 0 0 10px 0;">
+            1. Tabela de Graus de Dificuldade de Manuseio
+        </h4>
+        <div class="table-responsive" style="border: 1px solid var(--border-light); border-radius: 6px; margin-bottom: 22px;">
+            <table class="data-table" style="font-size: 12.5px;">
+                <thead>
+                    <tr style="background: #FAF5F0;">
+                        <th>Código</th>
+                        <th>Grau de Dificuldade</th>
+                        <th>Tempo Base em Minutos</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for dif in dificuldades %}
+                    <tr>
+                        <td><strong style="color: var(--wine-700);">{{ dif.codigo }}</strong></td>
+                        <td>{{ dif.nome }}</td>
+                        <td><strong>{{ dif.tempo_min }} min</strong></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tabela de Máquinas e Velocidade por 10 cm -->
+        <h4 style="font-size: 14px; color: var(--wine-900); margin: 0 0 10px 0;">
+            2. Velocidade Padrão das Máquinas (A cada 10 cm de costura)
+        </h4>
+        <div class="table-responsive" style="border: 1px solid var(--border-light); border-radius: 6px; margin-bottom: 16px;">
+            <table class="data-table" style="font-size: 12px;">
+                <thead>
+                    <tr style="background: #FAF5F0;">
+                        <th>Código</th>
+                        <th>Nome da Máquina</th>
+                        <th>Cálculo</th>
+                        <th>s/ Aviamento (Base)</th>
+                        <th>c/ Elástico (+5%)</th>
+                        <th>c/ Viés (+5%)</th>
+                        <th>c/ 2 Viés (+10%)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in referencias_maquinas %}
+                    <tr>
+                        <td><strong style="color: var(--wine-700);">{{ m.codigo }}</strong></td>
+                        <td>{{ m.nome }}</td>
+                        <td>{{ m.get_tipo_calculo_display }}</td>
+                        <td><strong>{{ m.tempo_base }} m</strong></td>
+                        <td><span style="color: #666;">+5%</span></td>
+                        <td><span style="color: #666;">+5%</span></td>
+                        <td><span style="color: #666;">+10%</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div style="text-align: right;">
+            <button type="button" onclick="fecharModalReferencias()" class="btn-secondary" style="padding: 8px 20px;">Fechar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================================== -->
+<!-- MODAL: COPIAR OPERAÇÕES DE OUTRO PRODUTO                                       -->
+<!-- ============================================================================== -->
+{% if request.user.is_superuser %}
+<div id="modalDuplicar" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: var(--radius-lg); width: 100%; max-width: 520px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.25);">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-light); padding-bottom: 12px; margin-bottom: 18px;">
+            <h3 style="margin: 0; color: var(--wine-900); font-size: 17px; font-weight: 700;">
+                Copiar Operações entre Produtos
+            </h3>
+            <button onclick="fecharModalDuplicar()" style="background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text-muted);">&times;</button>
+        </div>
+
+        <form action="{% url 'operacoes_engenharia' %}" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="duplicar_operacoes">
+            <input type="hidden" name="destino_produto_id" value="{{ produto_selecionado.id }}">
+
+            <div class="form-group">
+                <label>Copiar Operações de Qual Modelo (Origem):</label>
+                <select name="origem_produto_id" class="form-control" required>
+                    {% for p in produtos %}
+                    {% if p.id != produto_selecionado.id and p.operacoes.exists %}
+                    <option value="{{ p.id }}">{{ p.sku }} — {{ p.nome }} ({{ p.operacoes.count }} operações)</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label>Copiar Para o Modelo Atual (Destino):</label>
+                <input type="text" class="form-control" value="{{ produto_selecionado.sku }} — {{ produto_selecionado.nome }}" readonly style="background: var(--bg-subtle);">
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" onclick="fecharModalDuplicar()" class="btn-secondary" style="padding: 8px 16px;">Cancelar</button>
+                <button type="submit" class="btn-primary" style="padding: 8px 20px;">Copiar Agora</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<script>
+function selecionarProduto(id) {
+    window.location.href = "{% url 'operacoes_engenharia' %}?produto=" + id;
+}
+
+function abrirModalNovaOperacao() {
+    document.getElementById('formOpAction').value = 'adicionar_operacao';
+    document.getElementById('formOpId').value = '';
+    document.getElementById('modalOperacaoTitulo').innerText = 'Adicionar Operação';
+    document.getElementById('opTitulo').value = '';
+    document.getElementById('opPartePeca').value = '';
+    document.getElementById('opAparelho').value = '';
+    document.getElementById('opQtdeManuseio').value = '4';
+    document.getElementById('opComprimento').value = '20';
+    document.getElementById('opPotSeg').value = '';
+    document.getElementById('opRitmo').value = '1.00';
+    document.getElementById('opTolerancia').value = '0.15';
+    document.getElementById('opObservacoes').value = '';
+    calcularPrevia();
+    document.getElementById('modalOperacao').style.display = 'flex';
+}
+
+function editarOperacaoModal(id, ordem, titulo, parte, maq, cond, aparelho, manuseio, dif, comp, pot_seg, ritmo, tol, obs) {
+    document.getElementById('formOpAction').value = 'editar_operacao';
+    document.getElementById('formOpId').value = id;
+    document.getElementById('modalOperacaoTitulo').innerText = 'Editar Operação #' + ordem;
+    document.getElementById('opOrdem').value = ordem;
+    document.getElementById('opTitulo').value = titulo;
+    document.getElementById('opPartePeca').value = parte;
+    document.getElementById('opMaquina').value = maq;
+    document.getElementById('opCondicao').value = cond;
+    document.getElementById('opAparelho').value = aparelho;
+    document.getElementById('opQtdeManuseio').value = manuseio;
+    document.getElementById('opDificuldade').value = dif;
+    document.getElementById('opComprimento').value = comp;
+    document.getElementById('opPotSeg').value = pot_seg;
+    document.getElementById('opRitmo').value = ritmo;
+    document.getElementById('opTolerancia').value = tol;
+    document.getElementById('opObservacoes').value = obs;
+    calcularPrevia();
+    document.getElementById('modalOperacao').style.display = 'flex';
+}
+
+function fecharModalOperacao() {
+    document.getElementById('modalOperacao').style.display = 'none';
+}
+
+function abrirModalReferencias() {
+    document.getElementById('modalReferencias').style.display = 'flex';
+}
+
+function fecharModalReferencias() {
+    document.getElementById('modalReferencias').style.display = 'none';
+}
+
+function abrirModalDuplicar() {
+    document.getElementById('modalDuplicar').style.display = 'flex';
+}
+
+function fecharModalDuplicar() {
+    document.getElementById('modalDuplicar').style.display = 'none';
+}
+
+// Calculadora em tempo real na tela ao digitar
+function calcularPrevia() {
+    const qtdeManuseio = parseFloat(document.getElementById('opQtdeManuseio').value) || 0;
+    const difSelect = document.getElementById('opDificuldade');
+    const difOption = difSelect.options[difSelect.selectedIndex];
+    const fatorDif = parseFloat(difOption.getAttribute('data-tempo')) || 0.05;
+
+    const tempoManuseio = qtdeManuseio * fatorDif;
+
+    const comp = parseFloat(document.getElementById('opComprimento').value) || 0;
+    const maqSelect = document.getElementById('opMaquina');
+    const maqOption = maqSelect.options[maqSelect.selectedIndex];
+    
+    let tempoBase = parseFloat(maqOption.getAttribute('data-base')) || 0.07;
+    const tipoCalc = maqOption.getAttribute('data-tipo') || '10cm';
+    const condicao = document.getElementById('opCondicao').value;
+
+    const fEl = parseFloat(maqOption.getAttribute('data-el')) || 0.05;
+    const fVi = parseFloat(maqOption.getAttribute('data-vi')) || 0.05;
+    const f2Vi = parseFloat(maqOption.getAttribute('data-2vi')) || 0.10;
+
+    let tempoUnit = tempoBase;
+    if (condicao === 'com_elastico') {
+        tempoUnit = tempoBase * (1 + fEl);
+    } else if (condicao === 'com_vies') {
+        tempoUnit = tempoBase * (1 + fVi);
+    } else if (condicao === 'com_2vies') {
+        tempoUnit = tempoBase * (1 + f2Vi);
+    }
+
+    let tempoCostura = 0;
+    if (tipoCalc === '10cm') {
+        tempoCostura = (comp / 10.0) * tempoUnit;
+    } else {
+        tempoCostura = comp * tempoUnit;
+    }
+
+    const tempoPadrao = tempoManuseio + tempoCostura;
+
+    document.getElementById('previaManuseio').innerText = tempoManuseio.toFixed(3) + ' min';
+    document.getElementById('previaCostura').innerText = tempoCostura.toFixed(3) + ' min';
+    document.getElementById('previaTP').innerText = tempoPadrao.toFixed(3) + ' min';
+}
+
+window.onclick = function(event) {
+    if (event.target === document.getElementById('modalOperacao')) {
+        fecharModalOperacao();
+    } else if (event.target === document.getElementById('modalReferencias')) {
+        fecharModalReferencias();
+    } else if (event.target === document.getElementById('modalDuplicar')) {
+        fecharModalDuplicar();
+    }
+}
+</script>
+{% endblock %}

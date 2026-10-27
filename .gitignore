@@ -1,0 +1,41 @@
+# ==============================================================================
+# Git Ignore - Lumina ERP Gestão Fabril & Marketplace
+# ==============================================================================
+
+# Virtual Environment
+venv/
+env/
+.venv/
+ENV/
+
+# Python Cache & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environment Variables
+.env
+
+# Database (O banco é gerado via 'python manage.py seed_demo_data')
+*.sqlite3
+*.sqlite3-journal
+
+# Django Media & Uploads
+media/
+fabrica/planilhas_marketplace/*.xlsx
+fabrica/planilhas_marketplace/*.xls
+fabrica/planilhas_marketplace/*.csv
+!fabrica/planilhas_marketplace/.gitkeep
+
+# IDEs & Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS Temporary Files
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log

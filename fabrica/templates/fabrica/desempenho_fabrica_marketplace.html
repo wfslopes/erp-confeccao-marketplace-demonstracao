@@ -1,0 +1,849 @@
+{% extends 'fabrica/base.html' %}
+{% load static %}
+
+{% block title %}Desempenho da Fábrica & Lucro Integrado - Disfarce Confecção{% endblock %}
+{% block breadcrumb %}Marketplace / Desempenho da Fábrica & Lucro Integrado{% endblock %}
+{% block page_title %}Desempenho da Fábrica & Lucro Integrado (Fábrica + Marketplace){% endblock %}
+
+{% block extra_head %}
+<!-- Chart.js para visualização comparativa de lucratividade -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .canal-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 8px;
+        border-radius: var(--radius-full, 9999px);
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        white-space: nowrap !important;
+        flex-shrink: 0 !important;
+        line-height: 1.2;
+    }
+    .canal-badge.shopee {
+        background-color: #FEF0EC;
+        color: #D33916;
+        border: 1px solid #FCD2C7;
+    }
+    .canal-badge.mercadolivre {
+        background-color: #EEF4FD;
+        color: #1754B5;
+        border: 1px solid #C8DCFA;
+    }
+    .canal-badge.tiktok {
+        background-color: #F0EEEE;
+        color: #1F191A;
+        border: 1px solid #D8D4D5;
+    }
+    .canal-badge.todos {
+        background-color: #F2EEF5;
+        color: #5B2B7D;
+        border: 1px solid #D9CCE6;
+    }
+
+    .subnav-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 22px;
+        border-bottom: 1px solid var(--border-light);
+        padding-bottom: 12px;
+        flex-wrap: wrap;
+    }
+    .subnav-tab {
+        padding: 8px 18px;
+        font-size: 13.5px;
+        font-weight: 600;
+        border-radius: var(--radius-md, 8px);
+        text-decoration: none;
+        color: var(--text-secondary);
+        background: var(--bg-surface);
+        border: 1px solid var(--border-light);
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .subnav-tab:hover {
+        background: var(--bg-subtle);
+        color: var(--text-primary);
+    }
+    .subnav-tab.active {
+        background: var(--wine-700, #6F2E34);
+        color: #FFFFFF !important;
+        font-weight: 700;
+        border-color: var(--wine-700, #6F2E34);
+    }
+
+    /* Switch de Visualização / Janelas */
+    .view-switcher-bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: var(--bg-surface);
+        padding: 8px;
+        border-radius: 12px;
+        border: 1px solid var(--border-light);
+        margin-bottom: 24px;
+        box-shadow: var(--shadow-sm);
+        flex-wrap: wrap;
+        justify-content: space-between;
+    }
+    .view-btn {
+        padding: 10px 22px;
+        border-radius: 8px;
+        font-size: 13.5px;
+        font-weight: 700;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+    .view-btn.active {
+        background: #1754B5;
+        color: #FFFFFF !important;
+        box-shadow: 0 4px 12px rgba(23, 84, 181, 0.25);
+    }
+    .view-btn:not(.active) {
+        background: transparent;
+        color: var(--text-secondary);
+    }
+    .view-btn:not(.active):hover {
+        background: var(--bg-subtle);
+        color: var(--text-primary);
+    }
+
+    /* Tabela de Alto Desempenho */
+    .fabrica-table {
+        width: 100%;
+        min-width: 1180px;
+        border-collapse: collapse;
+        font-size: 12.5px;
+    }
+    .fabrica-table th {
+        background: #FAF6F2;
+        padding: 10px 8px;
+        text-align: left;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        color: var(--text-secondary);
+        border-bottom: 2px solid var(--border-light);
+        white-space: nowrap;
+    }
+    .fabrica-table td {
+        padding: 10px 8px;
+        border-bottom: 1px solid var(--border-light);
+        vertical-align: middle;
+    }
+    .fabrica-table tr:hover {
+        background-color: #FDFAF7;
+    }
+
+    .kpi-integrated-card {
+        background: linear-gradient(135deg, #2D142C 0%, #510A32 50%, #801336 100%);
+        color: #FFFFFF !important;
+        border-radius: 12px;
+        padding: 20px 22px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 8px 24px rgba(81, 10, 50, 0.25);
+    }
+    .kpi-integrated-card h4 {
+        margin: 0;
+        font-size: 11.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: rgba(255, 255, 255, 0.85);
+        font-weight: 700;
+    }
+    .kpi-integrated-card .value {
+        font-size: 27px;
+        font-weight: 800;
+        margin: 8px 0 4px 0;
+        color: #FFFFFF;
+        letter-spacing: -0.5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid" style="padding: 20px 24px 60px; max-width: 1680px; margin: 0 auto;">
+
+    <!-- 1. SUB-MENU DE NAVEGAÇÃO -->
+    <div class="subnav-tabs">
+        <a href="{% url 'marketplace_dashboard' %}" class="subnav-tab">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="18" height="18" x="3" y="3" rx="2"/>
+                <path d="M3 9h18"/>
+                <path d="M9 21V9"/>
+            </svg>
+            Painel & Extrato de Vendas
+        </a>
+        <a href="{% url 'desempenho_produtos_marketplace' %}" class="subnav-tab">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="20" x2="18" y2="10"/>
+                <line x1="12" y1="20" x2="12" y2="4"/>
+                <line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+            Desempenho dos Produtos (Marketplace)
+        </a>
+        <a href="{% url 'desempenho_fabrica_marketplace' %}" class="subnav-tab active">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/>
+            </svg>
+            Desempenho da Fábrica & Lucro Integrado
+        </a>
+        <a href="{% url 'produtos_marketplace' %}" class="subnav-tab">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
+                <path d="M3 6h18"/>
+                <path d="M16 10a4 4 0 0 1-8 0"/>
+            </svg>
+            Produtos do Marketplace & Custos por Data
+        </a>
+    </div>
+
+    <!-- 2. BARRA DE FILTROS RÁPIDOS -->
+    <div class="card" style="padding: 16px 20px; margin-bottom: 24px;">
+        <form method="get" action="{% url 'desempenho_fabrica_marketplace' %}" style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
+            <input type="hidden" name="tab" id="filtro_tab_ativa" value="{{ tab_ativa }}">
+            
+            <div style="flex: 1; min-width: 220px;">
+                <label style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); display: block; margin-bottom: 4px;">Canal de Venda</label>
+                <select name="canal" class="form-control" onchange="this.form.submit()" style="padding: 7px 10px; font-size: 13px;">
+                    <option value="todos" {% if canal_filter == 'todos' %}selected{% endif %}>Todos os Canais</option>
+                    <option value="shopee" {% if canal_filter == 'shopee' %}selected{% endif %}>Shopee</option>
+                    <option value="tiktok" {% if canal_filter == 'tiktok' %}selected{% endif %}>TikTok Shop</option>
+                    <option value="mercadolivre" {% if canal_filter == 'mercadolivre' %}selected{% endif %}>Mercado Livre</option>
+                </select>
+            </div>
+
+            <div style="flex: 1; min-width: 200px;">
+                <label style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); display: block; margin-bottom: 4px;">Período Analisado</label>
+                <select name="periodo" class="form-control" onchange="this.form.submit()" style="padding: 7px 10px; font-size: 13px;">
+                    <option value="todos" {% if periodo_dias == 'todos' %}selected{% endif %}>Todo o Histórico</option>
+                    <option value="7" {% if periodo_dias == '7' %}selected{% endif %}>Últimos 7 dias</option>
+                    <option value="30" {% if periodo_dias == '30' %}selected{% endif %}>Últimos 30 dias</option>
+                    <option value="90" {% if periodo_dias == '90' %}selected{% endif %}>Últimos 90 dias</option>
+                </select>
+            </div>
+
+            <div style="flex: 2; min-width: 260px;">
+                <label style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); display: block; margin-bottom: 4px;">Buscar por Nome ou SKU</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" name="q" value="{{ search }}" placeholder="Ex: Cropped, Baby Doll, Camisola..." class="form-control" style="padding: 7px 12px; font-size: 13px;">
+                    <button type="submit" class="btn-primary" style="padding: 7px 16px; font-size: 13px; white-space: nowrap;">Filtrar</button>
+                    {% if search or canal_filter != 'todos' or periodo_dias != 'todos' %}
+                    <a href="{% url 'desempenho_fabrica_marketplace' %}?tab={{ tab_ativa }}" class="btn-secondary" style="padding: 7px 12px; font-size: 13px;" title="Limpar Filtros">✕</a>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- 3. CARDS DE RESULTADO CONSOLIDADO DO GRUPO (FÁBRICA + MARKETPLACE) -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; margin-bottom: 26px;">
+        
+        <!-- Card 1: Lucro do Marketplace -->
+        <div class="card" style="margin-bottom: 0; padding: 20px 22px; border-left: 4px solid #EE4D2D;">
+            <div style="font-size: 11.5px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; display: flex; align-items: center; justify-content: space-between;">
+                <span>1. Lucro do Marketplace</span>
+                <span style="font-size: 10px; background: #FEF0EC; color: #D33916; padding: 2px 7px; border-radius: 4px; font-weight: 700;">Varejo Online</span>
+            </div>
+            <div style="font-size: 26px; font-weight: 800; color: {% if lucro_mkt_total >= 0 %}#1E6E3C{% else %}#A32832{% endif %}; margin: 8px 0 4px 0;">
+                R$ {{ lucro_mkt_total|floatformat:2 }}
+            </div>
+            <div style="font-size: 12px; color: var(--text-secondary);">
+                Margem Líquida Varejo: <strong>{{ margem_mkt_total|floatformat:1 }}%</strong> <br>
+                <span style="font-size: 11px; color: var(--text-muted);">GMV Faturado: R$ {{ faturamento_mkt_total|floatformat:2 }}</span>
+            </div>
+        </div>
+
+        <!-- Card 2: Lucro da Fábrica -->
+        <div class="card" style="margin-bottom: 0; padding: 20px 22px; border-left: 4px solid #1754B5;">
+            <div style="font-size: 11.5px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; display: flex; align-items: center; justify-content: space-between;">
+                <span>2. Lucro da Fábrica</span>
+                <span style="font-size: 10px; background: #EEF4FD; color: #1754B5; padding: 2px 7px; border-radius: 4px; font-weight: 700;">Indústria / Confecção</span>
+            </div>
+            <div style="font-size: 26px; font-weight: 800; color: #1E6E3C; margin: 8px 0 4px 0;">
+                R$ {{ lucro_fabrica_total|floatformat:2 }}
+            </div>
+            <div style="font-size: 12px; color: var(--text-secondary);">
+                Margem Industrial: <strong>{{ margem_fabrica_total|floatformat:1 }}%</strong> <br>
+                <span style="font-size: 11px; color: var(--text-muted);">Faturamento Fábrica: R$ {{ faturamento_fabrica_total|floatformat:2 }}</span>
+            </div>
+        </div>
+
+        <!-- Card 3: 💎 LUCRO TOTAL CONSOLIDADO (GRUPO ECONÔMICO) -->
+        <div class="kpi-integrated-card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h4>💎 Lucro Total Integrado</h4>
+                <span style="background: rgba(255,255,255,0.2); font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 4px;">Fábrica + Mkt Juntos</span>
+            </div>
+            <div class="value">
+                R$ {{ lucro_integrado_total|floatformat:2 }}
+            </div>
+            <div style="font-size: 12.5px; color: rgba(255,255,255,0.92);">
+                Margem Integrada Real: <strong>{{ margem_integrada_total|floatformat:1 }}%</strong> sobre o GMV <br>
+                <span style="font-size: 11.5px; color: rgba(255,255,255,0.75);">Resultado final no bolso da sua confecção</span>
+            </div>
+        </div>
+
+        <!-- Card 4: Produção e Pedidos -->
+        <div class="card" style="margin-bottom: 0; padding: 20px 22px; border-left: 4px solid var(--wine-700);">
+            <div style="font-size: 11.5px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; display: flex; align-items: center; justify-content: space-between;">
+                <span>Volume de Produção</span>
+                <span style="font-size: 10px; background: #FAF6F2; color: var(--wine-700); padding: 2px 7px; border-radius: 4px; font-weight: 700;">Confecção</span>
+            </div>
+            <div style="font-size: 26px; font-weight: 800; color: var(--wine-700); margin: 8px 0 4px 0;">
+                {{ pecas_produzidas_total }} <span style="font-size: 16px; font-weight: 600; color: var(--text-muted);">peças</span>
+            </div>
+            <div style="font-size: 12px; color: var(--text-secondary);">
+                Distribuídas em <strong>{{ pedidos_total }} pedidos</strong> de clientes <br>
+                <span style="font-size: 11px; color: var(--text-muted);">Custo Fabril Total: R$ {{ custo_fabrica_total|floatformat:2 }}</span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 4. BARRA SWITCHER ENTRE AS DUAS JANELAS -->
+    <div class="view-switcher-bar">
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <button type="button" class="view-btn {% if tab_ativa == 'integrado' %}active{% endif %}" onclick="trocarJanela('integrado')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                    <polyline points="2 17 12 22 22 17"/>
+                    <polyline points="2 12 12 17 22 12"/>
+                </svg>
+                Janela 1: Lucro Integrado (Fábrica + Marketplace Juntos)
+            </button>
+            <button type="button" class="view-btn {% if tab_ativa == 'fabrica' %}active{% endif %}" onclick="trocarJanela('fabrica')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/>
+                </svg>
+                Janela 2: Desempenho Exclusivo da Fábrica & Mapeamento de Custos
+            </button>
+        </div>
+        <div style="font-size: 12px; color: var(--text-muted); font-weight: 500;">
+            {{ produtos_data|length }} produtos avaliados
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- JANELA 1: VISÃO INTEGRADA (LUCRO DA FÁBRICA + MARKETPLACE JUNTOS)          -->
+    <!-- ========================================================================= -->
+    <div id="janela-integrado" style="display: {% if tab_ativa == 'integrado' %}block{% else %}none{% endif %};">
+        
+        <!-- Gráfico Comparativo: Lucro Fábrica vs Lucro Marketplace -->
+        <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="display: flex; align-items: center; gap: 8px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #1754B5;">
+                        <line x1="18" x2="18" y1="20" y2="10"/>
+                        <line x1="12" x2="12" y1="20" y2="4"/>
+                        <line x1="6" x2="6" y1="20" y2="14"/>
+                    </svg>
+                    Distribuição de Lucro por Produto: Fábrica (Indústria) vs Marketplace (Varejo Online)
+                </h3>
+                <span style="font-size: 12px; color: var(--text-muted);">Top 8 modelos em faturamento</span>
+            </div>
+            <div style="height: 290px; position: relative;">
+                <canvas id="chartLucroIntegrado"></canvas>
+            </div>
+        </div>
+
+        <!-- Tabela Integrada -->
+        <div class="table-container">
+            <div class="table-header-box" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--text-primary);">
+                        Demonstrativo de Resultado Integrado (Fábrica + Marketplace)
+                    </h3>
+                    <p style="margin: 3px 0 0 0; font-size: 12px; color: var(--text-muted);">
+                        Veja exatamente quanto sobra no marketplace, quanto a fábrica ganhou na produção, e a lucratividade global da sua empresa.
+                    </p>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="fabrica-table">
+                    <thead>
+                        <tr>
+                            <th style="min-width: 220px;">Produto / Anúncio</th>
+                            <th style="text-align: center; min-width: 80px;">Peças Vendidas</th>
+                            <th style="text-align: right; min-width: 100px;">Faturamento GMV</th>
+                            <th style="text-align: right; min-width: 105px;">Lucro Marketplace</th>
+                            <th style="text-align: right; min-width: 105px;">Lucro Fábrica</th>
+                            <th style="text-align: right; min-width: 120px; background: #F6EDEE; color: var(--wine-800);">💎 Lucro Total Integrado</th>
+                            <th style="text-align: center; min-width: 85px;">Margem Integrada</th>
+                            <th style="min-width: 280px; max-width: 400px;">Diagnóstico Estratégico</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in produtos_data %}
+                        <tr>
+                            <!-- Produto e SKU sem truncamento do badge -->
+                            <td style="min-width: 220px;">
+                                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px; flex-wrap: wrap;">
+                                    <span class="canal-badge {{ item.produto.canal }}">{{ item.produto.get_canal_display }}</span>
+                                    <span style="font-family: monospace; font-size: 12px; font-weight: 700; color: var(--wine-700);">{{ item.produto.sku_marketplace }}</span>
+                                </div>
+                                <div style="font-size: 12.5px; color: var(--text-primary); font-weight: 600; line-height: 1.35;" title="{{ item.produto.nome_marketplace }}">
+                                    {{ item.produto.nome_marketplace|truncatechars:48 }}
+                                </div>
+                                {% if item.produto.produto_fabrica %}
+                                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+                                    Fábrica: <span style="color: #1E6E3C; font-weight: 600;">{{ item.produto.produto_fabrica.sku }} ({{ item.produto.produto_fabrica.nome|truncatechars:18 }})</span>
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center;">
+                                <strong style="font-size: 13px; color: var(--text-primary);">{{ item.pecas_vendidas }}</strong>
+                                <div style="font-size: 11px; color: var(--text-muted);">{{ item.qtd_pedidos }} pedidos</div>
+                            </td>
+                            <td style="text-align: right;">
+                                <strong style="font-size: 13px; color: var(--text-primary);">R$ {{ item.gmv_marketplace|floatformat:2 }}</strong>
+                            </td>
+                            <td style="text-align: right;">
+                                <strong style="font-size: 13px; color: {% if item.lucro_marketplace >= 0 %}#1E6E3C{% else %}#A32832{% endif %};">
+                                    R$ {{ item.lucro_marketplace|floatformat:2 }}
+                                </strong>
+                                <div style="font-size: 11px; color: var(--text-muted);">{{ item.margem_mkt_pct|floatformat:1 }}%</div>
+                            </td>
+                            <td style="text-align: right;">
+                                <strong style="font-size: 13px; color: #1754B5;">
+                                    R$ {{ item.lucro_fabrica_total|floatformat:2 }}
+                                </strong>
+                                <div style="font-size: 11px; color: var(--text-muted);">{{ item.margem_fabrica_pct|floatformat:1 }}% ind.</div>
+                            </td>
+                            <td style="text-align: right; background: #FDF7F8;">
+                                <strong style="font-size: 14px; font-weight: 800; color: {% if item.lucro_integrado >= 0 %}var(--wine-700){% else %}#A32832{% endif %};">
+                                    R$ {{ item.lucro_integrado|floatformat:2 }}
+                                </strong>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge {% if item.margem_integrada_pct >= 10 %}badge-success{% elif item.margem_integrada_pct >= 0 %}badge-warning{% else %}badge-danger{% endif %}" style="font-size: 11px; font-weight: 700;">
+                                    {{ item.margem_integrada_pct|floatformat:1 }}%
+                                </span>
+                            </td>
+                            <td style="min-width: 280px; max-width: 400px;">
+                                <div style="font-size: 12px; line-height: 1.45; color: var(--text-secondary); background: #FAF7F4; border-left: 3px solid {% if item.status_badge == 'badge-success' %}#1E6E3C{% elif item.status_badge == 'badge-warning' %}#D9822B{% elif item.status_badge == 'badge-danger' %}#A32832{% else %}#6C757D{% endif %}; padding: 7px 10px; border-radius: 6px; word-break: normal; overflow-wrap: break-word; white-space: normal;">
+                                    <strong style="color: var(--text-primary); font-size: 11.5px; display: block; margin-bottom: 2px;">{{ item.status_label }}</strong>
+                                    {{ item.diagnostico }}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="empty-state" style="padding: 30px; text-align: center;">
+                                <p>Nenhum produto com vendas localizado para os filtros selecionados.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- JANELA 2: DESEMPENHO EXCLUSIVO DA FÁBRICA & MAPEAMENTO DE CUSTOS         -->
+    <!-- ========================================================================= -->
+    <div id="janela-fabrica" style="display: {% if tab_ativa == 'fabrica' %}block{% else %}none{% endif %};">
+        
+        <div style="background: #EEF4FD; border-left: 4px solid #1754B5; padding: 14px 18px; border-radius: 8px; margin-bottom: 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div>
+                <strong style="color: #1754B5; font-size: 13.5px;">⚙️ Mapeamento de Custos Fabris da Confecção:</strong>
+                <p style="margin: 3px 0 0 0; font-size: 12.5px; color: #2B4C7E;">
+                    Veja abaixo quanto está definido atualmente de <strong>Custo Fabril de Produção</strong> e <strong>Preço de Transferência</strong> para cada anúncio. Clique no botão <strong>"Editar"</strong> para alterar os valores a qualquer momento.
+                </p>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div class="table-header-box" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--text-primary);">
+                        Tabela de Custos Fabris, Margem Industrial & Ações
+                    </h3>
+                    <p style="margin: 3px 0 0 0; font-size: 12px; color: var(--text-muted);">
+                        Valores vigentes definidos para cada modelo e cálculo de rentabilidade da fábrica
+                    </p>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="fabrica-table">
+                    <thead>
+                        <tr>
+                            <th style="min-width: 220px;">Produto / Anúncio Marketplace</th>
+                            <th style="text-align: center; min-width: 80px;">Peças Produzidas</th>
+                            <th style="text-align: right; min-width: 110px; background: #EEF4FD; color: #1754B5;">Custo Fabril Unit.</th>
+                            <th style="text-align: right; min-width: 110px;">Preço Transf. Unit.</th>
+                            <th style="text-align: right; min-width: 95px;">Lucro Unit. Fábrica</th>
+                            <th style="text-align: center; min-width: 85px;">Margem Fábrica</th>
+                            <th style="text-align: right; min-width: 105px;">Custo Fabril Total</th>
+                            <th style="text-align: right; min-width: 105px;">Faturamento Fábrica</th>
+                            <th style="text-align: right; min-width: 115px; background: #F4F7FD; color: #1754B5;">Lucro Líquido Fábrica</th>
+                            <th style="text-align: center; min-width: 90px;">Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in produtos_data %}
+                        <tr>
+                            <td style="min-width: 220px;">
+                                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px; flex-wrap: wrap;">
+                                    <span class="canal-badge {{ item.produto.canal }}">{{ item.produto.get_canal_display }}</span>
+                                    <span style="font-family: monospace; font-size: 12px; font-weight: 700; color: var(--wine-700);">{{ item.produto.sku_marketplace }}</span>
+                                </div>
+                                <div style="font-size: 12.5px; color: var(--text-primary); font-weight: 600; line-height: 1.35;" title="{{ item.produto.nome_marketplace }}">
+                                    {{ item.produto.nome_marketplace|truncatechars:48 }}
+                                </div>
+                                {% if item.produto.produto_fabrica %}
+                                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+                                        Fábrica: <span style="color: #1E6E3C; font-weight: 600;">{{ item.produto.produto_fabrica.sku }} ({{ item.produto.produto_fabrica.nome|truncatechars:18 }})</span>
+                                    </div>
+                                {% endif %}
+                            </td>
+
+                            <td style="text-align: center;">
+                                <strong style="font-size: 13.5px; color: var(--text-primary);">{{ item.pecas_vendidas }}</strong>
+                                <div style="font-size: 10.5px; color: var(--text-muted);">peças confeccionadas</div>
+                            </td>
+
+                            <!-- Visualização Clara do Custo Fabril Unitário -->
+                            <td style="text-align: right; background: #FAFBFD;">
+                                {% if item.custo_fabril_unit > 0 %}
+                                    <strong style="color: #1754B5; font-size: 13.5px;">R$ {{ item.custo_fabril_unit|floatformat:2 }}</strong>
+                                    {% if item.produto.produto_fabrica and not item.produto.custo_producao_fabrica %}
+                                        <div style="font-size: 10px; color: #1E6E3C; font-weight: 600;" title="Custo herdado automaticamente da ficha técnica da fábrica">via Ficha Técnica</div>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge badge-warning" style="font-size: 10px; padding: 2px 7px;">Não definido</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Visualização Clara do Preço de Transferência -->
+                            <td style="text-align: right;">
+                                <strong style="color: var(--text-primary); font-size: 13.5px;">R$ {{ item.custo_transf_unit|floatformat:2 }}</strong>
+                            </td>
+
+                            <td style="text-align: right;">
+                                <strong style="font-size: 13px; color: {% if item.lucro_fabril_unit >= 0 %}#1E6E3C{% else %}#A32832{% endif %};">
+                                    R$ {{ item.lucro_fabril_unit|floatformat:2 }}
+                                </strong>
+                            </td>
+
+                            <td style="text-align: center;">
+                                <span class="badge {% if item.margem_fabrica_pct >= 25 %}badge-success{% elif item.margem_fabrica_pct >= 10 %}badge-info{% elif item.margem_fabrica_pct >= 0 %}badge-warning{% else %}badge-danger{% endif %}" style="font-size: 11px;">
+                                    {{ item.margem_fabrica_pct|floatformat:1 }}%
+                                </span>
+                            </td>
+
+                            <td style="text-align: right;">
+                                <span style="font-size: 12.5px; color: var(--text-secondary);">R$ {{ item.custo_fabrica_total|floatformat:2 }}</span>
+                            </td>
+
+                            <td style="text-align: right;">
+                                <span style="font-size: 12.5px; color: var(--text-primary); font-weight: 600;">R$ {{ item.faturamento_fabrica|floatformat:2 }}</span>
+                            </td>
+
+                            <td style="text-align: right; background: #F4F7FD;">
+                                <strong style="font-size: 13.5px; font-weight: 800; color: #1754B5;">
+                                    R$ {{ item.lucro_fabrica_total|floatformat:2 }}
+                                </strong>
+                            </td>
+
+                            <!-- Botão Editar Custos -->
+                            <td style="text-align: center;">
+                                <button type="button" class="btn-primary" onclick="abrirModalEditarCustos('{{ item.produto.id }}', '{{ item.produto.nome_marketplace|escapejs }}', '{{ item.produto.sku_marketplace|escapejs }}', '{{ item.produto.canal }}', '{{ item.custo_fabril_unit|floatformat:2 }}', '{{ item.custo_transf_unit|floatformat:2 }}')" style="padding: 6px 14px; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; border-radius: 6px; font-weight: 600;" title="Alterar custo fabril ou preço de transferência deste produto">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 20h9"/>
+                                        <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+                                    </svg>
+                                    <span>Editar</span>
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="10" class="empty-state" style="padding: 30px; text-align: center;">
+                                <p>Nenhum produto cadastrado no marketplace.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL DE EDIÇÃO DE CUSTOS DA FÁBRICA                                      -->
+<!-- ========================================================================= -->
+<div id="modal-editar-custos-fabrica" style="display: none; position: fixed; inset: 0; background: rgba(18, 14, 15, 0.65); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(2px);">
+    <div style="background: var(--bg-surface, #FFFFFF); border-radius: 12px; width: 95%; max-width: 520px; padding: 26px; box-shadow: 0 20px 40px rgba(0,0,0,0.25); position: relative; border: 1px solid var(--border-light, #EFE8DF);">
+        <button type="button" onclick="fecharModalEditarCustos()" style="position: absolute; top: 18px; right: 18px; background: none; border: none; font-size: 24px; line-height: 1; cursor: pointer; color: var(--text-muted);">&times;</button>
+        
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 18px;">
+            <div style="width: 44px; height: 44px; border-radius: 10px; background: #EEF4FD; display: flex; align-items: center; justify-content: center; color: #1754B5;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/>
+                </svg>
+            </div>
+            <div>
+                <h3 style="margin: 0; font-size: 17px; font-weight: 700; color: var(--text-primary);">Editar Custos da Fábrica</h3>
+                <div style="display: flex; align-items: center; gap: 6px; margin-top: 3px;">
+                    <span id="modal_canal_badge" class="canal-badge shopee">Canal</span>
+                    <span id="modal_sku" style="font-family: monospace; font-size: 11.5px; color: var(--text-muted); font-weight: 700;">SKU</span>
+                </div>
+            </div>
+        </div>
+
+        <div style="background: #FAF6F2; border-left: 3px solid var(--wine-700); padding: 10px 14px; border-radius: 6px; margin-bottom: 20px;">
+            <div id="modal_produto_nome" style="font-size: 12.5px; font-weight: 600; color: var(--text-primary); line-height: 1.35;">
+                Nome do Produto
+            </div>
+        </div>
+
+        <form id="formEditarCustosFabrica" method="post" action="">
+            {% csrf_token %}
+            <input type="hidden" name="next_url" value="{{ request.get_full_path }}">
+
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; display: block; margin-bottom: 6px; color: var(--text-secondary);">
+                    Custo Fabril de Produção (R$) *
+                </label>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <span style="font-size: 14px; font-weight: 700; color: var(--text-muted);">R$</span>
+                    <input type="number" step="0.01" min="0" name="custo_producao_fabrica" id="modal_input_custo_fabrica" class="form-control" style="font-size: 14px; font-weight: 700; padding: 8px 12px;" required oninput="calcularSimulacaoModal()">
+                </div>
+                <small style="font-size: 11.5px; color: var(--text-muted); display: block; margin-top: 4px;">
+                    Quanto custa para confeccionar a peça (tecido + aviamentos + costura/facção).
+                </small>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 18px;">
+                <label style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; display: block; margin-bottom: 6px; color: var(--text-secondary);">
+                    Preço de Transferência da Fábrica (R$) *
+                </label>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <span style="font-size: 14px; font-weight: 700; color: var(--text-muted);">R$</span>
+                    <input type="number" step="0.01" min="0" name="custo_transferencia_padrao" id="modal_input_custo_transf" class="form-control" style="font-size: 14px; font-weight: 700; padding: 8px 12px;" required oninput="calcularSimulacaoModal()">
+                </div>
+                <small style="font-size: 11.5px; color: var(--text-muted); display: block; margin-top: 4px;">
+                    Valor que a fábrica transfere/cobra do canal de marketplace por peça.
+                </small>
+            </div>
+
+            <!-- Caixa de Simulação em Tempo Real -->
+            <div style="background: #EEF4FD; border: 1px solid #C8DCFA; border-radius: 8px; padding: 12px 14px; margin-bottom: 20px;">
+                <div style="font-size: 11.5px; font-weight: 700; text-transform: uppercase; color: #1754B5; letter-spacing: 0.4px; margin-bottom: 4px;">
+                    Resultado Industrial por Peça:
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 13px; color: #2B4C7E;">Lucro Líquido da Fábrica:</span>
+                    <strong id="modal_simulacao_lucro" style="font-size: 14px; color: #1E6E3C;">R$ 0,00</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 3px;">
+                    <span style="font-size: 12px; color: #2B4C7E;">Margem Industrial:</span>
+                    <strong id="modal_simulacao_margem" style="font-size: 12.5px; color: #1754B5;">0.0%</strong>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 22px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12.5px; color: var(--text-secondary);">
+                    <input type="checkbox" name="recalcular_vendas" value="1" checked style="width: 16px; height: 16px; accent-color: var(--wine-700);">
+                    <span>Recalcular histórico de vendas anteriores deste produto com os novos custos</span>
+                </label>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" onclick="fecharModalEditarCustos()" class="btn-secondary" style="padding: 9px 18px; font-size: 13px;">Cancelar</button>
+                <button type="submit" class="btn-primary" style="padding: 9px 24px; font-size: 13px;">Salvar Custos</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- SCRIPT DE INTERAÇÃO & GRÁFICOS -->
+<script>
+    function trocarJanela(tab) {
+        document.getElementById('filtro_tab_ativa').value = tab;
+        
+        const janelaIntegrado = document.getElementById('janela-integrado');
+        const janelaFabrica = document.getElementById('janela-fabrica');
+        const btns = document.querySelectorAll('.view-btn');
+
+        if (tab === 'integrado') {
+            janelaIntegrado.style.display = 'block';
+            janelaFabrica.style.display = 'none';
+            btns[0].classList.add('active');
+            btns[1].classList.remove('active');
+        } else {
+            janelaIntegrado.style.display = 'none';
+            janelaFabrica.style.display = 'block';
+            btns[0].classList.remove('active');
+            btns[1].classList.add('active');
+        }
+
+        // Atualiza a URL sem recarregar
+        const url = new URL(window.location);
+        url.searchParams.set('tab', tab);
+        window.history.replaceState({}, '', url);
+    }
+
+    // Modal de Edição de Custos
+    function abrirModalEditarCustos(id, nome, sku, canal, custoFabrica, custoTransf) {
+        const modal = document.getElementById('modal-editar-custos-fabrica');
+        const form = document.getElementById('formEditarCustosFabrica');
+        
+        form.action = '/marketplace/produtos/' + id + '/salvar-custo-fabrica/';
+        document.getElementById('modal_produto_nome').textContent = nome;
+        document.getElementById('modal_sku').textContent = 'SKU: ' + sku;
+        
+        const badge = document.getElementById('modal_canal_badge');
+        badge.className = 'canal-badge ' + canal;
+        badge.textContent = canal === 'shopee' ? 'Shopee' : (canal === 'tiktok' ? 'TikTok Shop' : (canal === 'mercadolivre' ? 'Mercado Livre' : canal));
+
+        const numFabrica = parseFloat(String(custoFabrica).replace(',', '.')) || 0;
+        const numTransf = parseFloat(String(custoTransf).replace(',', '.')) || 0;
+
+        document.getElementById('modal_input_custo_fabrica').value = numFabrica > 0 ? numFabrica.toFixed(2) : '';
+        document.getElementById('modal_input_custo_transf').value = numTransf > 0 ? numTransf.toFixed(2) : '';
+
+        calcularSimulacaoModal();
+        modal.style.display = 'flex';
+    }
+
+    function fecharModalEditarCustos() {
+        document.getElementById('modal-editar-custos-fabrica').style.display = 'none';
+    }
+
+    function calcularSimulacaoModal() {
+        const fab = parseFloat(document.getElementById('modal_input_custo_fabrica').value) || 0;
+        const transf = parseFloat(document.getElementById('modal_input_custo_transf').value) || 0;
+        const lucro = transf - fab;
+        const margem = transf > 0 ? ((lucro / transf) * 100).toFixed(1) : '0.0';
+
+        const elemLucro = document.getElementById('modal_simulacao_lucro');
+        elemLucro.textContent = 'R$ ' + lucro.toFixed(2);
+        elemLucro.style.color = lucro >= 0 ? '#1E6E3C' : '#A32832';
+
+        document.getElementById('modal_simulacao_margem').textContent = margem + '%';
+    }
+
+    // Fechar ao clicar fora ou ESC
+    window.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') fecharModalEditarCustos();
+    });
+    document.addEventListener('click', function(e) {
+        const modal = document.getElementById('modal-editar-custos-fabrica');
+        if (e.target === modal) fecharModalEditarCustos();
+    });
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const ctx = document.getElementById('chartLucroIntegrado');
+        if (!ctx) return;
+
+        const labels = {{ chart_labels_json|safe }};
+        const lucroMkt = {{ chart_lucro_mkt_json|safe }};
+        const lucroFabrica = {{ chart_lucro_fabrica_json|safe }};
+        const lucroIntegrado = {{ chart_lucro_integrado_json|safe }};
+
+        if (labels.length === 0) return;
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Lucro da Fábrica (Indústria)',
+                        data: lucroFabrica,
+                        backgroundColor: '#1754B5',
+                        borderRadius: 4,
+                        order: 2,
+                    },
+                    {
+                        label: 'Lucro do Marketplace (Varejo)',
+                        data: lucroMkt,
+                        backgroundColor: '#EE4D2D',
+                        borderRadius: 4,
+                        order: 2,
+                    },
+                    {
+                        label: '💎 Lucro Total Integrado',
+                        data: lucroIntegrado,
+                        type: 'line',
+                        borderColor: '#6F2E34',
+                        backgroundColor: '#6F2E34',
+                        borderWidth: 2.5,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#FFFFFF',
+                        pointBorderColor: '#6F2E34',
+                        pointBorderWidth: 2,
+                        tension: 0.2,
+                        order: 1,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            font: { size: 12, weight: 'bold' },
+                            padding: 14,
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) label += ': ';
+                                if (context.parsed.y !== null) {
+                                    label += 'R$ ' + context.parsed.y.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 11 } }
+                    },
+                    y: {
+                        ticks: {
+                            callback: function(value) {
+                                return 'R$ ' + value.toLocaleString('pt-BR');
+                            },
+                            font: { size: 11 }
+                        },
+                        grid: { color: 'rgba(0,0,0,0.05)' }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

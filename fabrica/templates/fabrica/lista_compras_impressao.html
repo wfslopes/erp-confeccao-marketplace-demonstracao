@@ -1,0 +1,422 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Compras & Insumos - Pedido {{ pedido.numero_pedido }}</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: #F8F5F1;
+            color: #23191B;
+            padding: 24px;
+        }
+
+        .no-print-bar {
+            max-width: 860px;
+            margin: 0 auto 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-imprimir {
+            background: linear-gradient(135deg, #6F2E34 0%, #521F24 100%);
+            color: #FCF7F2;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 13.5px;
+            box-shadow: 0 4px 12px rgba(111, 46, 52, 0.2);
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-imprimir:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(111, 46, 52, 0.3);
+        }
+
+        .btn-voltar {
+            color: #6F2E34;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .btn-voltar:hover {
+            text-decoration: underline;
+        }
+
+        .relatorio-container {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 36px 40px;
+            border: 1px solid #E5DDD1;
+            border-radius: 16px;
+            background: #FFFFFF;
+            box-shadow: 0 4px 18px rgba(111, 46, 52, 0.04);
+        }
+
+        .relatorio-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid #6F2E34;
+            padding-bottom: 18px;
+            margin-bottom: 24px;
+        }
+
+        .logo-print {
+            max-width: 140px;
+            height: auto;
+            margin-bottom: 4px;
+        }
+
+        .header-title {
+            color: #6F2E34;
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: -0.3px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            background: #FAF7F2;
+            padding: 16px;
+            border-radius: 10px;
+            margin-bottom: 24px;
+            border: 1px solid #ECE3D7;
+        }
+
+        .info-item span {
+            display: block;
+            font-size: 10.5px;
+            text-transform: uppercase;
+            color: #7A696C;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+        }
+
+        .info-item strong {
+            font-size: 13.5px;
+            color: #23191B;
+        }
+
+        .secao-titulo {
+            font-size: 13px;
+            font-weight: 800;
+            color: #6F2E34;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #E5DDD1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .tabela-relatorio {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 24px;
+            font-size: 12.5px;
+        }
+
+        .tabela-relatorio th {
+            background-color: #FAF5F0;
+            color: #5A2328;
+            padding: 8px 10px;
+            text-align: left;
+            font-weight: 700;
+            border: 1px solid #E8DFD3;
+            font-size: 11.5px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .tabela-relatorio td {
+            padding: 8px 10px;
+            border: 1px solid #E8DFD3;
+            color: #332628;
+        }
+
+        .tabela-relatorio tr:nth-child(even) {
+            background-color: #FCFAF8;
+        }
+
+        .box-check {
+            width: 16px;
+            height: 16px;
+            border: 1.5px solid #6F2E34;
+            border-radius: 3px;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .totais-resumo {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #FAF5F0;
+            border: 1px solid #EADBCC;
+            border-radius: 8px;
+            padding: 12px 18px;
+            margin-bottom: 28px;
+        }
+
+        .assinaturas-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-top: 36px;
+            padding-top: 14px;
+        }
+
+        .assinatura-box {
+            text-align: center;
+        }
+
+        .assinatura-linha {
+            border-top: 1px solid #8D777A;
+            margin-bottom: 6px;
+        }
+
+        .assinatura-nome {
+            font-size: 12px;
+            font-weight: 700;
+            color: #4A3C3E;
+        }
+
+        .assinatura-cargo {
+            font-size: 11px;
+            color: #8D777A;
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .no-print-bar {
+                display: none;
+            }
+            .relatorio-container {
+                border: none;
+                box-shadow: none;
+                padding: 0;
+                max-width: 100%;
+            }
+            .tabela-relatorio tr {
+                page-break-inside: avoid;
+            }
+            @page {
+                size: A4;
+                margin: 12mm 15mm;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Barra de Controle (Não impressa) -->
+    <div class="no-print-bar">
+        <a href="{% url 'detalhe_pedido' pedido.id %}" class="btn-voltar">
+            &larr; Voltar para Detalhes do Pedido
+        </a>
+        <button onclick="window.print()" class="btn-imprimir">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 6 2 18 2 18 9"/>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                <rect width="12" height="8" x="6" y="14"/>
+            </svg>
+            <span>Imprimir Lista de Compras</span>
+        </button>
+    </div>
+
+    <!-- Conteúdo do Documento -->
+    <div class="relatorio-container">
+        
+        <!-- Cabeçalho -->
+        <div class="relatorio-header">
+            <div>
+                <img src="{% static 'fabrica/img/logo_disfarce.png' %}?v=2" alt="Disfarce" class="logo-print">
+                <div style="font-size: 11px; color: #7A696C; font-weight: 600;">Disfarce Confecção & Moda Íntima</div>
+            </div>
+            <div style="text-align: right;">
+                <div class="header-title">LISTA DE COMPRAS & REQUISIÇÃO DE INSUMOS</div>
+                <div style="font-size: 14px; font-weight: 800; color: #6F2E34; margin-top: 2px;">
+                    PEDIDO Nº {{ pedido.numero_pedido }}
+                </div>
+                <div style="font-size: 11px; color: #7A696C; margin-top: 3px;">
+                    Emissão: {{ data_emissao|date:'d/m/Y H:i' }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Dados do Pedido e Cliente -->
+        <div class="info-grid">
+            <div class="info-item">
+                <span>Cliente / Comprador</span>
+                <strong>{{ cliente.nome }}</strong>
+                {% if cliente.cidade %}<div style="font-size: 11px; color: #7A696C;">{{ cliente.cidade }}/{{ cliente.uf }}</div>{% endif %}
+            </div>
+            <div class="info-item" style="border-left: 2px solid #6F2E34; padding-left: 8px;">
+                <span>TAG a Usar na Peça</span>
+                <strong style="color: #6F2E34; font-size: 14px;">🏷️ {{ cliente.tag|default:"Padrão / Sem TAG Específica" }}</strong>
+            </div>
+            <div class="info-item">
+                <span>Data do Pedido</span>
+                <strong>{{ pedido.data_pedido|date:'d/m/Y' }}</strong>
+            </div>
+            <div class="info-item">
+                <span>Previsão de Entrega</span>
+                <strong>{{ pedido.data_entrega_prevista|date:'d/m/Y'|default:"A definir" }}</strong>
+            </div>
+        </div>
+
+        <!-- 1. Produtos Encomendados a Produzir -->
+        <div class="secao-titulo">
+            <span>1. Produtos a Produzir neste Pedido</span>
+            <span style="font-size: 11.5px; font-weight: 600; color: #7A696C;">Total: {{ total_pecas }} peças</span>
+        </div>
+
+        <table class="tabela-relatorio">
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Referência / SKU</th>
+                    <th style="width: 35%;">Descrição do Modelo</th>
+                    <th style="width: 25%;">Grade / Cores / Tamanhos</th>
+                    <th style="width: 15%; text-align: right;">Qtd a Produzir</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for it in itens %}
+                <tr>
+                    <td><strong>{{ it.produto.sku }}</strong></td>
+                    <td>{{ it.produto.nome }}</td>
+                    <td>{{ it.grade_cores_tamanhos|default:"-" }}</td>
+                    <td style="text-align: right; font-weight: 700;">{{ it.quantidade }} pçs</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- 2. Lista de Insumos & Matéria-Prima para Comprar -->
+        <div class="secao-titulo">
+            <span>2. Matéria-Prima & Insumos Necessários (Previsão Baseada na Ficha Técnica)</span>
+            <span style="font-size: 11.5px; font-weight: 600; color: #7A696C;">{{ insumos|length }} itens</span>
+        </div>
+
+        {% if produtos_sem_ficha %}
+        <div style="background: #FFF8E1; border: 1px solid #FFE082; padding: 8px 12px; border-radius: 6px; font-size: 11.5px; color: #7B5600; margin-bottom: 14px;">
+            <strong>Aviso de Ficha Técnica:</strong> O(s) modelo(s) {% for p in produtos_sem_ficha %}{{ p.sku }}{% if not forloop.last %}, {% endif %}{% endfor %} ainda não possui(em) ficha técnica de consumo preenchida.
+        </div>
+        {% endif %}
+
+        <table class="tabela-relatorio">
+            <thead>
+                <tr>
+                    <th style="width: 6%; text-align: center;">Conf.</th>
+                    <th style="width: 34%;">Matéria-Prima / Insumo</th>
+                    <th style="width: 10%; text-align: center;">Unid.</th>
+                    <th style="width: 16%; text-align: right;">Qtd Necessária</th>
+                    <th style="width: 14%; text-align: right;">Custo Unit.</th>
+                    <th style="width: 20%;">Fornecedor / Observações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ins in insumos %}
+                <tr>
+                    <td style="text-align: center;">
+                        <span class="box-check"></span>
+                    </td>
+                    <td>
+                        <strong>{{ ins.nome }}</strong>
+                    </td>
+                    <td style="text-align: center;">
+                        <strong>{{ ins.unidade }}</strong>
+                    </td>
+                    <td style="text-align: right; font-weight: 800; color: #6F2E34; font-size: 13px;">
+                        {{ ins.quantidade_total }} {{ ins.unidade }}
+                    </td>
+                    <td style="text-align: right;">
+                        {% if ins.custo_unitario > 0 %}
+                            R$ {{ ins.custo_unitario|floatformat:2 }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td style="border-bottom: 1px dashed #D0C2B2;"></td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 20px; color: #7A696C;">
+                        Nenhum insumo calculado. Verifique se as matérias-primas foram cadastradas na ficha técnica dos produtos.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Resumo de Totais -->
+        <div class="totais-resumo">
+            <div>
+                <span style="font-size: 11.5px; text-transform: uppercase; font-weight: 700; color: #7A696C;">Total Geral de Peças:</span>
+                <strong style="font-size: 15px; color: #6F2E34; margin-left: 6px;">{{ total_pecas }} pçs</strong>
+            </div>
+            <div>
+                <span style="font-size: 11.5px; text-transform: uppercase; font-weight: 700; color: #7A696C;">Variedade de Insumos:</span>
+                <strong style="font-size: 15px; color: #23191B; margin-left: 6px;">{{ insumos|length }} tipos</strong>
+            </div>
+            <div>
+                <span style="font-size: 11.5px; text-transform: uppercase; font-weight: 700; color: #7A696C;">Custo Estimado Matéria-Prima:</span>
+                <strong style="font-size: 16px; color: #1E6E3C; margin-left: 6px;">R$ {{ custo_total_insumos|floatformat:2 }}</strong>
+            </div>
+        </div>
+
+        {% if pedido.observacoes %}
+        <div style="margin-bottom: 24px; padding: 10px 14px; background: #FAF7F2; border: 1px solid #ECE3D7; border-radius: 6px; font-size: 12px;">
+            <strong>Observações Adicionais:</strong> {{ pedido.observacoes }}
+        </div>
+        {% endif %}
+
+        <!-- Assinaturas de Conferência -->
+        <div class="assinaturas-grid">
+            <div class="assinatura-box">
+                <div class="assinatura-linha"></div>
+                <div class="assinatura-nome">Responsável por Compras</div>
+                <div class="assinatura-cargo">Disfarce Confecção &bull; Data: ____/____/________</div>
+            </div>
+            <div class="assinatura-box">
+                <div class="assinatura-linha"></div>
+                <div class="assinatura-nome">Conferência / Almoxarifado</div>
+                <div class="assinatura-cargo">Recebimento dos Insumos &bull; Data: ____/____/________</div>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>
