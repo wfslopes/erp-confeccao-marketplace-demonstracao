@@ -137,7 +137,7 @@ O projeto inclui um **comando de inicialização automática de dados de demonst
    ```
    Acesse **[http://127.0.0.1:8000](http://127.0.0.1:8000)**  
    * **Usuário:** `admin`  
-   * **Senha:** `admin123`
+   * **Senha:** `admin`
 
 ---
 

@@ -28,8 +28,12 @@ class Command(BaseCommand):
 
         # 1. Superuser
         if not User.objects.filter(username="admin").exists():
-            User.objects.create_superuser("admin", "admin@luminaerp.demo", "admin123")
-            self.stdout.write(self.style.SUCCESS("✓ Superusuário criado: admin / admin123"))
+            User.objects.create_superuser("admin", "admin@luminaerp.demo", "admin")
+            self.stdout.write(self.style.SUCCESS("✓ Superusuário criado: admin / admin"))
+        else:
+            u = User.objects.get(username="admin")
+            u.set_password("admin")
+            u.save()
 
         # 2. Categorias
         cat_lingerie, _ = Categoria.objects.get_or_create(nome="Lingerie & Moda Íntima")
