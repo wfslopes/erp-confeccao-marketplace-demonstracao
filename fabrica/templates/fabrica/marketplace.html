@@ -117,7 +117,7 @@
 
     <!-- SUBNAV TABS -->
     <div style="display: flex; gap: 8px; margin-bottom: 22px; border-bottom: 1px solid var(--border-light); padding-bottom: 12px; flex-wrap: wrap;">
-        <a href="{% url 'marketplace_dashboard' %}" style="padding: 8px 18px; font-size: 13.5px; font-weight: 700; border-radius: var(--radius-md, 8px); text-decoration: none; background: var(--wine-700, #6F2E34); color: #FFFFFF;">
+        <a href="{% url 'marketplace_dashboard' %}" style="padding: 8px 18px; font-size: 13.5px; font-weight: 700; border-radius: var(--radius-md, 8px); text-decoration: none; background: var(--wine-700, #4A765D); color: #FFFFFF;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 4px;">
                 <rect width="18" height="18" x="3" y="3" rx="2"/>
                 <path d="M3 9h18"/>
@@ -688,7 +688,7 @@
                 {% for num in vendas.paginator.page_range %}
                     {% if num >= vendas.number|add:"-2" and num <= vendas.number|add:"2" %}
                         {% if num == vendas.number %}
-                            <span style="padding: 5px 12px; background: var(--wine-700, #6F2E34); color: #FFFFFF; font-weight: 700; font-size: 12.5px; border-radius: var(--radius-sm, 6px);">
+                            <span style="padding: 5px 12px; background: var(--wine-700, #4A765D); color: #FFFFFF; font-weight: 700; font-size: 12.5px; border-radius: var(--radius-sm, 6px);">
                                 {{ num }}
                             </span>
                         {% else %}
@@ -980,7 +980,7 @@
                 <div class="form-group" style="margin-bottom: 18px;">
                     <label style="font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; display: block; margin-bottom: 6px; color: var(--text-secondary, #574B4E);">Arquivo da Planilha (.xlsx, .xls, .xlsm ou .csv) *</label>
                     <div id="drop_area_planilha" style="border: 2px dashed var(--wine-300, #C2969B); border-radius: 10px; padding: 22px 18px; text-align: center; background: #FAF6F2; cursor: pointer; transition: all 0.2s ease;" onclick="document.getElementById('input_arquivo_planilha').click();">
-                        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color: var(--wine-700, #6F2E34); margin-bottom: 8px;">
+                        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color: var(--wine-700, #4A765D); margin-bottom: 8px;">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                             <polyline points="17 8 12 3 7 8"/>
                             <line x1="12" y1="3" x2="12" y2="15"/>
@@ -1180,7 +1180,7 @@
                                 {{ canais_stats.mercadolivre.faturamento|stringformat:".2f" }},
                                 {{ canais_stats.tiktok.faturamento|stringformat:".2f" }}
                             ],
-                            backgroundColor: '#6F2E34',
+                            backgroundColor: '#4A765D',
                             borderRadius: 6
                         },
                         {
@@ -1243,7 +1243,7 @@
                         ],
                         backgroundColor: [
                             '#1E6E3C', // Verde Lucro
-                            '#883B43', // Vinho Fábrica
+                            '#5D8C71', // Vinho Fábrica
                             '#D97706', // Âmbar Taxas
                             '#1F6296', // Azul Ads
                             '#8C7E81'  // Neutro Impostos

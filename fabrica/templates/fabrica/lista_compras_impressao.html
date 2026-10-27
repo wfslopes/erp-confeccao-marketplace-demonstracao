@@ -34,7 +34,7 @@
         }
 
         .btn-imprimir {
-            background: linear-gradient(135deg, #6F2E34 0%, #521F24 100%);
+            background: linear-gradient(135deg, #4A765D 0%, #2D4839 100%);
             color: #FCF7F2;
             border: none;
             padding: 10px 24px;
@@ -55,7 +55,7 @@
         }
 
         .btn-voltar {
-            color: #6F2E34;
+            color: #4A765D;
             text-decoration: none;
             font-weight: 600;
             font-size: 13px;
@@ -79,7 +79,7 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            border-bottom: 2px solid #6F2E34;
+            border-bottom: 2px solid #4A765D;
             padding-bottom: 18px;
             margin-bottom: 24px;
         }
@@ -91,7 +91,7 @@
         }
 
         .header-title {
-            color: #6F2E34;
+            color: #4A765D;
             font-size: 18px;
             font-weight: 800;
             letter-spacing: -0.3px;
@@ -126,7 +126,7 @@
         .secao-titulo {
             font-size: 13px;
             font-weight: 800;
-            color: #6F2E34;
+            color: #4A765D;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-bottom: 10px;
@@ -146,7 +146,7 @@
 
         .tabela-relatorio th {
             background-color: #FAF5F0;
-            color: #5A2328;
+            color: #395A48;
             padding: 8px 10px;
             text-align: left;
             font-weight: 700;
@@ -169,7 +169,7 @@
         .box-check {
             width: 16px;
             height: 16px;
-            border: 1.5px solid #6F2E34;
+            border: 1.5px solid #4A765D;
             border-radius: 3px;
             display: inline-block;
             vertical-align: middle;
@@ -266,7 +266,7 @@
             </div>
             <div style="text-align: right;">
                 <div class="header-title">LISTA DE COMPRAS & REQUISIÇÃO DE INSUMOS</div>
-                <div style="font-size: 14px; font-weight: 800; color: #6F2E34; margin-top: 2px;">
+                <div style="font-size: 14px; font-weight: 800; color: #4A765D; margin-top: 2px;">
                     PEDIDO Nº {{ pedido.numero_pedido }}
                 </div>
                 <div style="font-size: 11px; color: #7A696C; margin-top: 3px;">
@@ -282,9 +282,9 @@
                 <strong>{{ cliente.nome }}</strong>
                 {% if cliente.cidade %}<div style="font-size: 11px; color: #7A696C;">{{ cliente.cidade }}/{{ cliente.uf }}</div>{% endif %}
             </div>
-            <div class="info-item" style="border-left: 2px solid #6F2E34; padding-left: 8px;">
+            <div class="info-item" style="border-left: 2px solid #4A765D; padding-left: 8px;">
                 <span>TAG a Usar na Peça</span>
-                <strong style="color: #6F2E34; font-size: 14px;">🏷️ {{ cliente.tag|default:"Padrão / Sem TAG Específica" }}</strong>
+                <strong style="color: #4A765D; font-size: 14px;">🏷️ {{ cliente.tag|default:"Padrão / Sem TAG Específica" }}</strong>
             </div>
             <div class="info-item">
                 <span>Data do Pedido</span>
@@ -358,7 +358,7 @@
                     <td style="text-align: center;">
                         <strong>{{ ins.unidade }}</strong>
                     </td>
-                    <td style="text-align: right; font-weight: 800; color: #6F2E34; font-size: 13px;">
+                    <td style="text-align: right; font-weight: 800; color: #4A765D; font-size: 13px;">
                         {{ ins.quantidade_total }} {{ ins.unidade }}
                     </td>
                     <td style="text-align: right;">
@@ -384,7 +384,7 @@
         <div class="totais-resumo">
             <div>
                 <span style="font-size: 11.5px; text-transform: uppercase; font-weight: 700; color: #7A696C;">Total Geral de Peças:</span>
-                <strong style="font-size: 15px; color: #6F2E34; margin-left: 6px;">{{ total_pecas }} pçs</strong>
+                <strong style="font-size: 15px; color: #4A765D; margin-left: 6px;">{{ total_pecas }} pçs</strong>
             </div>
             <div>
                 <span style="font-size: 11.5px; text-transform: uppercase; font-weight: 700; color: #7A696C;">Variedade de Insumos:</span>

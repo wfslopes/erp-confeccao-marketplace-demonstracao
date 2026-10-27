@@ -1,40 +1,40 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
 
 /* ==========================================================================
-   SISTEMA DE DESIGN - DISFARCE CONFECÇÃO
-   Paleta de Cores: Vinho Marsala (#6F2E34), Areia/Off-White (#FCF7F2, #FAF5EF)
+   SISTEMA DE DESIGN - LUMINA CONFECÇÕES
+   Paleta de Cores: Verde Pastel Sálvia (#4A765D), Off-White (#F8FAF8, #F1F5F2)
    ========================================================================== */
 
 :root {
-    /* Paleta Principal Disfarce (Vinho Marsala) */
-    --wine-900: #381418;
-    --wine-850: #491A1F;
-    --wine-800: #552227;
-    --wine-700: #62282E;
-    --wine-600: #6F2E34; /* Cor Oficial da Marca */
-    --wine-500: #883B43;
-    --wine-400: #A85A62;
-    --wine-300: #C7868D;
-    --wine-200: #E4BDC1;
-    --wine-100: #F5E6E8;
-    --wine-50:  #FAF1F2;
+    /* Paleta Principal Lumina (Verde Sálvia & Verde Pastel) */
+    --wine-900: #1D3025; /* Verde floresta escuro para contraste nobre */
+    --wine-850: #253D30;
+    --wine-800: #2F4B3C;
+    --wine-700: #395A48;
+    --wine-600: #4A765D; /* Cor Oficial da Marca Lumina (Sálvia Equilibrado) */
+    --wine-500: #5D8C71;
+    --wine-400: #77A38B;
+    --wine-300: #99BFA9; /* Verde pastel suave */
+    --wine-200: #C2DCCF; /* Verde pastel claro */
+    --wine-100: #E0EEE6; /* Fundo suave menta pastel */
+    --wine-50:  #F0F7F3; /* Fundo sutilíssimo pastel */
 
-    /* Tons Neutros Elegantes (Areia & Off-White) */
-    --bg-app:     #F8F5F1; /* Canvas geral macio e moderno */
+    /* Tons Neutros Elegantes (Off-White & Areia Suave) */
+    --bg-app:     #F8FAF8; /* Canvas geral off-white macio e moderno */
     --bg-surface: #FFFFFF; /* Fundo de cartões e tabelas */
-    --bg-subtle:  #F4EFEA; /* Fundo secundário para caixas e detalhes */
-    --bg-hover:   #F9F6F2; /* Efeito de hover suave */
+    --bg-subtle:  #F1F5F2; /* Fundo secundário para caixas e detalhes */
+    --bg-hover:   #EBF2EE; /* Efeito de hover suave */
     
-    --border-subtle: #EFE8DF;
-    --border-light:  #E5DDD1;
-    --border-medium: #D5C9BA;
-    --border-focus:  #6F2E34;
+    --border-subtle: #E2ECE5;
+    --border-light:  #D3E2D8;
+    --border-medium: #B8CEBF;
+    --border-focus:  #4A765D;
 
     /* Tipografia & Hierarquia */
-    --text-primary:   #23191B; /* Contraste alto e agradável */
-    --text-secondary: #584A4D; /* Legendas, títulos secundários */
-    --text-muted:     #8C7E81; /* Placeholders, timestamps */
-    --text-inverse:   #FCF7F2;
+    --text-primary:   #1C2921; /* Contraste alto e agradável */
+    --text-secondary: #4A5F52; /* Legendas, títulos secundários */
+    --text-muted:     #7E9487; /* Placeholders, timestamps */
+    --text-inverse:   #F8FAF8;
 
     /* Semântica & Badges */
     --status-success-bg:     #E8F6EE;
@@ -53,12 +53,12 @@
     --status-danger-text:    #A32832;
     --status-danger-border:  #F8BAC0;
 
-    /* Sombras Elevadas & Modernas */
-    --shadow-xs: 0 1px 2px rgba(35, 25, 27, 0.04);
-    --shadow-sm: 0 2px 5px rgba(35, 25, 27, 0.05), 0 1px 2px rgba(35, 25, 27, 0.03);
-    --shadow-md: 0 4px 14px rgba(111, 46, 52, 0.06), 0 2px 4px rgba(35, 25, 27, 0.02);
-    --shadow-lg: 0 10px 25px -4px rgba(111, 46, 52, 0.10), 0 4px 10px -2px rgba(35, 25, 27, 0.04);
-    --shadow-xl: 0 20px 35px -6px rgba(111, 46, 52, 0.14);
+    /* Sombras Elevadas & Modernas com tom orgânico sálvia */
+    --shadow-xs: 0 1px 2px rgba(28, 41, 33, 0.04);
+    --shadow-sm: 0 2px 5px rgba(28, 41, 33, 0.05), 0 1px 2px rgba(28, 41, 33, 0.03);
+    --shadow-md: 0 4px 14px rgba(40, 70, 52, 0.07), 0 2px 4px rgba(28, 41, 33, 0.02);
+    --shadow-lg: 0 10px 25px -4px rgba(40, 70, 52, 0.11), 0 4px 10px -2px rgba(28, 41, 33, 0.03);
+    --shadow-xl: 0 20px 35px -6px rgba(40, 70, 52, 0.15);
 
     /* Arredondamento Consistente */
     --radius-xs: 4px;
@@ -101,12 +101,12 @@ body {
 
 .sidebar {
     width: 270px;
-    background: linear-gradient(180deg, #6F2E34 0%, #4D1A20 100%);
+    background: linear-gradient(180deg, #2D4839 0%, #1D3025 100%);
     color: var(--text-inverse);
     display: flex;
     flex-direction: column;
     padding: 24px 16px;
-    box-shadow: 4px 0 24px rgba(56, 20, 24, 0.15);
+    box-shadow: 4px 0 24px rgba(29, 48, 37, 0.20);
     z-index: 100;
     user-select: none;
     flex-shrink: 0;
@@ -415,7 +415,7 @@ body {
    ========================================================================== */
 
 .hero-banner {
-    background: linear-gradient(135deg, #6F2E34 0%, #883B43 100%);
+    background: linear-gradient(135deg, #3D634E 0%, #2D4839 100%);
     color: var(--text-inverse);
     padding: 24px 30px;
     border-radius: var(--radius-lg);
@@ -508,9 +508,9 @@ body {
 }
 
 .btn-atalho.primary {
-    background: linear-gradient(135deg, #6F2E34 0%, #5A2328 100%);
+    background: linear-gradient(135deg, #4A765D 0%, #395A48 100%);
     color: #FFFFFF;
-    border-color: #6F2E34;
+    border-color: #4A765D;
 }
 
 .btn-atalho.primary .btn-icon {
@@ -519,7 +519,7 @@ body {
 }
 
 .btn-atalho.primary:hover {
-    background: linear-gradient(135deg, #5A2328 0%, #44171C 100%);
+    background: linear-gradient(135deg, #395A48 0%, #2F4B3C 100%);
 }
 
 /* ==========================================================================
@@ -574,7 +574,7 @@ a.stat-card {
     left: 0;
     right: 0;
     height: 3px;
-    background: linear-gradient(90deg, #6F2E34 0%, #BD8E93 100%);
+    background: linear-gradient(90deg, #4A765D 0%, #99BFA9 100%);
     opacity: 0;
     transition: var(--transition);
 }
@@ -907,13 +907,13 @@ a.stat-card:focus-visible {
 .form-control:focus {
     outline: none;
     border-color: var(--wine-600);
-    box-shadow: 0 0 0 3px rgba(111, 46, 52, 0.12);
+    box-shadow: 0 0 0 3px rgba(74, 118, 93, 0.16);
     background-color: #FFFFFF;
 }
 
 select.form-control {
     cursor: pointer;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236F2E34' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234A765D' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 12px center;
     padding-right: 32px;
@@ -925,7 +925,7 @@ select.form-control {
    ========================================================================== */
 
 .btn-primary, .btn-filter {
-    background: linear-gradient(135deg, #6F2E34 0%, #582429 100%);
+    background: linear-gradient(135deg, #4A765D 0%, #395A48 100%);
     color: #FFFFFF;
     border: none;
     padding: 10px 20px;
@@ -944,7 +944,7 @@ select.form-control {
 }
 
 .btn-primary:hover, .btn-filter:hover {
-    background: linear-gradient(135deg, #582429 0%, #43191D 100%);
+    background: linear-gradient(135deg, #3E664F 0%, #2F4B3C 100%);
     transform: translateY(-1px);
     box-shadow: var(--shadow-sm);
     color: #FFFFFF;
